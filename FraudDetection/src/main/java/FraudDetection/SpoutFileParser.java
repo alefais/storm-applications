@@ -1,6 +1,8 @@
 package FraudDetection;
 
-import Constants.Field;
+import Constants.FraudDetectionConstants.*;
+import FraudDetectionOriginal.SpoutMeterHook;
+import Util.config.Configuration;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -17,15 +19,25 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Scanner;
 
+import static Util.config.Configuration.METRICS_ENABLED;
+
 /**
  * The spout is in charge of reading the input raw data file, parsing it
  * and generating the stream of words toward the FraudPredictorBolt.
+ * 
+ * Format of the input file:
+ * EntityID,record_of<EntityID, op_type>
+ *
+ * @author Alessandra Fais
  */
-public class SpoutParser extends BaseRichSpout {
+public class SpoutFileParser extends BaseRichSpout {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SpoutParser.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SpoutFileParser.class);
 
-    SpoutOutputCollector collector;
+    protected Configuration config;
+    protected SpoutOutputCollector collector;
+    protected TopologyContext context;
+    protected Map<String, Fields> fields;
 
     private String file_path;
     private String split_regex;
@@ -37,16 +49,23 @@ public class SpoutParser extends BaseRichSpout {
      * @param file path to the input data file
      * @param split split expression
      */
-    SpoutParser(String file, String split) {
+    SpoutFileParser(String file, String split) {
         file_path = file;
         split_regex = split;
         completed = false;
     }
 
     @Override
-    public void open(Map map, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
-        LOG.info("[SpoutParser] Started.");
+    public void open(Map conf, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
+        LOG.info("[SpoutFileParser] Started.");
+
+        config = Configuration.fromMap(conf);
         collector = spoutOutputCollector;
+        context = topologyContext;
+
+        if (config.getBoolean(METRICS_ENABLED, false)) {
+            context.addTaskHook(new SpoutMeterHook());
+        }
     }
 
     /**
@@ -72,21 +91,24 @@ public class SpoutParser extends BaseRichSpout {
             // generate for at least 60 seconds (60000 ms)
             //while (timeElapsed < 60000) {
 
-                // read input dataset and write words into an array list
+                // read input dataset and write words into an array list:
                 // split each line on the first occurrence of comma character
-                // first string identifies the entity (source bank account) of the payment
-                // second string identifies the destination bank account and the type of the operation
+                // - first string identifies the entity (source bank account) of the payment
+                // - second string identifies the destination bank account and the type of
+                //   the operation (record)
                 try {
                     Scanner scan = new Scanner(txt);
                     while (scan.hasNextLine()) {
-                        String line = scan.nextLine();
-                        entities.add(line.split(split_regex)[0]);
-                        records.add(line);
-                        LOG.info("[SpoutParser] EntityID: {}   Record: {}", line.split(split_regex)[0], line);
+                        String[] line = scan.nextLine().split(split_regex, 2);
+                        entities.add(line[0]);
+                        records.add(line[1]);
+                        LOG.info("[SpoutFileParser] EntityID: {}   Record: {}", line[0], line[1]);
                     }
+                    LOG.info("[SpoutFileParser] No more lines to read, closing file...");
                     scan.close();
                 } catch (FileNotFoundException | NullPointerException e) {
-                    e.printStackTrace();
+                    LOG.error("The file {} does not exists", file_path);
+                    throw new RuntimeException("The file '" + file_path + "' does not exists");
                 }
 
             //    endTime = System.nanoTime();
@@ -98,10 +120,10 @@ public class SpoutParser extends BaseRichSpout {
                 collector.emit(new Values(entities.get(i), records.get(i)));
             }
             completed = true;
-            LOG.info("[SpoutParser] generated the whole stream.");
+            LOG.info("[SpoutFileParser] generated the whole stream.");
 
             long t_end = System.nanoTime();
-            LOG.warn("[SpoutParser] nextTuple ~ {} ms.", (t_end - t_start) / 1000000); // spout execution time
+            LOG.warn("[SpoutFileParser] nextTuple ~ {} ms.", (t_end - t_start) / 1000000); // spout execution time
         }
     }
 
@@ -112,6 +134,6 @@ public class SpoutParser extends BaseRichSpout {
 
     @Override
     public void close() {
-        LOG.info("[SpoutParser] Terminated.");
+        LOG.info("[SpoutFileParser] Terminated.");
     }
 }
