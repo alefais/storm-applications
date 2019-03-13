@@ -80,7 +80,7 @@ public class MarkovModelPredictor extends ModelBasedPredictor {
 
         //detection algoritm
         String algorithm = conf.getString(DETECTION_ALGO);
-        LOG.info("[predictor] detection algorithm: " + algorithm);
+        LOG.debug("[predictor] detection algorithm: " + algorithm);
 
         if (algorithm.equals("missProbability")) {
             detectionAlgorithm = DetectionAlgorithm.MissProbability;
@@ -121,7 +121,7 @@ public class MarkovModelPredictor extends ModelBasedPredictor {
 
         //metric threshold
         metricThreshold = conf.getDouble(METRIC_THRESHOLD);
-        LOG.info("[predictor] the threshold is: " + metricThreshold);
+        LOG.debug("[predictor] the threshold is: " + metricThreshold);
     }
 
     @Override
@@ -132,8 +132,7 @@ public class MarkovModelPredictor extends ModelBasedPredictor {
         if (null == recordSeq) {
             recordSeq = new ArrayList<>();
             records.put(entityID, recordSeq);
-        } else
-            LOG.info("[predictor] recordseq size={} and content={}", recordSeq.size(), recordSeq.toString());
+        }
 
         //add and maintain size
         recordSeq.add(record);
@@ -150,7 +149,7 @@ public class MarkovModelPredictor extends ModelBasedPredictor {
                 stateSeq = new String[stateSeqWindowSize];
                 for (int i = 0; i < stateSeqWindowSize; ++i) {
                     stateSeq[i] = recordSeq.get(i).split(",")[stateOrdinal];
-                    //LOG.info("[predictor] size={}, stateseq[{}][1]={}", recordSeq.size(), i, stateSeq[i]);
+                    LOG.debug("[predictor] size={}, stateseq[{}][1]={}", recordSeq.size(), i, stateSeq[i]);
                 }
                 score = getLocalMetric(stateSeq);
             }
