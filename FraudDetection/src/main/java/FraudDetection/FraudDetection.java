@@ -31,15 +31,17 @@ public class FraudDetection {
             String alert =
                     "In order to correctly run FraudDetection app you need to pass the following arguments:\n" +
                     " file path\n" +
-                    "Optional arguments:\n parallelism degree (default 1)\n topology name (default FraudDetection)\n" +
-                    "NOTE: default execution mode is local (LocalCluster)";
+                    "Optional arguments:\n" +
+                    " parallelism degree (default 1)\n" +
+                    " topology name (default FraudDetection)\n" +
+                    " execution mode (default local)";
             LOG.error(alert);
         } else {
             // parse command line arguments
             String file_path = args[0];
-            Integer parallelism_degree = (args.length > 2) ? new Integer(args[2]) : 1;
-            String topology_name = (args.length > 3) ? args[3] : "FraudDetection";
-            String ex_mode = (args.length > 4) ? args[4] : "local";
+            Integer parallelism_degree = (args.length > 1) ? new Integer(args[1]) : 1;
+            String topology_name = (args.length > 2) ? args[2] : "FraudDetection";
+            String ex_mode = (args.length > 3) ? args[3] : "local";
 
             // prepare the topology
             TopologyBuilder builder = new TopologyBuilder();
@@ -61,10 +63,10 @@ public class FraudDetection {
                 Properties p = loadProperties(cfg);
 
                 conf = Configuration.fromProperties(p);
-                LOG.info("Loaded configuration file {}", cfg);
+                LOG.info("Loaded configuration file {}.", cfg);
             } catch (IOException e) {
-                LOG.error("Unable to load configuration file", e);
-                throw new RuntimeException("Unable to load configuration file", e);
+                LOG.error("Unable to load configuration file.", e);
+                throw new RuntimeException("Unable to load configuration file.", e);
             }
 
             // build the topology
@@ -77,9 +79,9 @@ public class FraudDetection {
                 else if (ex_mode.equals("remote"))
                     runTopologyRemotely(topology, topology_name, conf);
             } catch (InterruptedException e) {
-                LOG.error("Error in running topology locally", e);
+                LOG.error("Error in running topology locally.", e);
             } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException e) {
-                LOG.error("Error in running topology remotely", e);
+                LOG.error("Error in running topology remotely.", e);
             }
         }
     }
@@ -95,18 +97,18 @@ public class FraudDetection {
     private static void runTopologyLocally(StormTopology topology, String topology_name, Config conf, int runtime_seconds)
             throws InterruptedException {
 
-        LOG.info("[main] Starting Storm on local mode to run for {} seconds", runtime_seconds);
+        LOG.info("[main] Starting Storm on local mode to run for {} seconds.", runtime_seconds);
         LocalCluster cluster = new LocalCluster();
 
-        LOG.info("[main] Topology {} submitted", topology_name);
+        LOG.info("[main] Topology {} submitted.", topology_name);
         cluster.submitTopology(topology_name, conf, topology);
         Thread.sleep((long) runtime_seconds * 1000);
 
         cluster.killTopology(topology_name);
-        LOG.info("[main] Topology {} finished", topology_name);
+        LOG.info("[main] Topology {} finished.", topology_name);
 
         cluster.shutdown();
-        LOG.info("[main] Local Storm cluster was shutdown");
+        LOG.info("[main] Local Storm cluster was shutdown.");
     }
 
     /**
@@ -136,7 +138,7 @@ public class FraudDetection {
             properties.load(is);
             is.close();
         }
-        LOG.info("[main] Properties loaded: {}", properties.toString());
+        LOG.info("[main] Properties loaded: {}.", properties.toString());
         return properties;
     }
 }
