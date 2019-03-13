@@ -42,7 +42,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
-        LOG.info("[FraudPredictorBolt] Preparing configuration.");
+        LOG.info("[FraudPredictorBolt] Started.");
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         processed = 0;               // total number of processed tuples
@@ -84,9 +84,9 @@ public class FraudPredictorBolt extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[FraudPredictorBolt] Processed {} elements in {} ms (found {} outliers). " +
+        LOG.info("[FraudPredictorBolt] Processed {} tuples in {} ms (found {} outliers). " +
                         "Source bandwidth is {} tuples per second. " +
-                        "Results throughput is {} tuples per second.",
+                        "Sink throughput is {} tuples per second.",
                 processed, t_elapsed, outliers,
                 processed / (t_elapsed / 1000),
                 outliers / (t_elapsed / 1000));

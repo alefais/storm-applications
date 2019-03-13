@@ -1,7 +1,6 @@
 package FraudDetection;
 
 import Constants.FraudDetectionConstants.Field;
-import Meter.BoltMeterHook;
 import Util.config.Configuration;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -13,8 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-
-import static Util.config.Configuration.METRICS_ENABLED;
 
 /**
  * The sink is in charge of printing the results.
@@ -29,22 +26,24 @@ public class ConsoleSink extends BaseRichBolt {
     protected Configuration config;
     protected TopologyContext context;
 
+    private long t_start;
+    private long t_end;
+    private long processed;
+
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
+        LOG.info("[ConsoleSink] Started.");
+
+        t_start = System.nanoTime(); // bolt start time in nanoseconds
+        processed = 0;               // total number of processed tuples
+
         config = Configuration.fromMap(stormConf);
         context = topologyContext;
         collector = outputCollector;
-
-        if (config.getBoolean(METRICS_ENABLED, false)) {
-            context.addTaskHook(new BoltMeterHook());
-        }
     }
 
     @Override
     public void execute(Tuple tuple) {
-
-        long t_start = System.nanoTime();
-
         String entityID = tuple.getStringByField(Field.ENTITY_ID);
         Double score = tuple.getDoubleByField(Field.SCORE);
         String states = tuple.getStringByField(Field.STATES);
@@ -61,8 +60,16 @@ public class ConsoleSink extends BaseRichBolt {
         System.out.println(line);*/
         collector.ack(tuple);
 
-        long t_end = System.nanoTime();
-        LOG.debug("[ConsoleSink] execute ~ {} ms.", (t_end - t_start) / 1000000); // bolt execution time
+        t_end = System.nanoTime();
+    }
+
+    @Override
+    public void cleanup() {
+        long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
+
+        LOG.info("[FraudPredictorBolt] Processed {} tuples in {} ms. " +
+                        "Throughput is {} tuples per second.",
+                processed, t_elapsed, processed / (t_elapsed / 1000));
     }
 
     @Override

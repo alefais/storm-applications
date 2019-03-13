@@ -102,17 +102,16 @@ public class FileParserSpout extends BaseRichSpout {
         }
 
         nt_execution++;
-        nt_end = System.nanoTime(); // method end time in nanoseconds
+        nt_end = System.nanoTime();
     }
 
     @Override
     public void close() {
-        LOG.info("[FileParserSpout] Terminated after {} generations.", nt_execution);
-        LOG.info("[FileParserSpout] Generation ended in {} ms.", (nt_end - t_start) / 1000000);
+        long t_elapsed = (nt_end - t_start) / 1000000;
 
-        long t_end = System.nanoTime();  // spout stop time in nanoseconds
-        long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
-        LOG.info("[FileParserSpout] Generated {} elements in {} ms, bandwidth is {} elements per second.",
+        LOG.info("[FileParserSpout] Terminated after {} generations.", nt_execution);
+        LOG.info("[FileParserSpout] Generated {} tuples in {} ms. " +
+                        "Source bandwidth is {} tuples per second.",
                 generated, t_elapsed, generated / (t_elapsed / 1000));
     }
 
