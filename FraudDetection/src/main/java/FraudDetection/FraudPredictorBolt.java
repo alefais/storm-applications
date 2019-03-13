@@ -38,13 +38,15 @@ public class FraudPredictorBolt extends BaseRichBolt {
     private long t_start;
     private long t_end;
     private long processed;
+    private long outliers;
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
         LOG.info("[FraudPredictorBolt] Preparing configuration.");
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
-        processed = 0;               // total number of generated tuples
+        processed = 0;               // total number of processed tuples
+        outliers = 0;                // total number of outliers
 
         config = Configuration.fromMap(stormConf);
         context = topologyContext;
@@ -66,9 +68,10 @@ public class FraudPredictorBolt extends BaseRichBolt {
 
         // send outliers
         if (p.isOutlier()) {
+            outliers++;
             collector.emit(tuple, new Values(entityID, p.getScore(), StringUtils.join(p.getStates(), ",")));
 
-            LOG.info("[FraudPredictorBolt] Sending outlier: EntityID {} score {} states {}",
+            LOG.debug("[FraudPredictorBolt] Sending outlier: EntityID {} score {} states {}",
                     entityID, p.getScore(), StringUtils.join(p.getStates(), ","));
         }
         collector.ack(tuple);
@@ -80,8 +83,12 @@ public class FraudPredictorBolt extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[FraudPredictorBolt] Processed {} elements in {} ms, bandwidth is {} elements per second.",
-                processed, t_elapsed, processed / (t_elapsed / 1000));
+        LOG.info("[FraudPredictorBolt] Processed {} elements in {} ms (found {} outliers).\n" +
+                        "Source bandwidth is {} tuples per second." +
+                        "Results throughput is {} tuples per second.",
+                processed, t_elapsed, outliers,
+                processed / (t_elapsed / 1000),
+                outliers / (t_elapsed / 1000));
     }
 
     @Override
