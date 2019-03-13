@@ -40,6 +40,8 @@ public class FileParserSpout extends BaseRichSpout {
 
     private long t_start;
     private long generated;
+    private long nt_execution;
+    private long nt_end;
 
     /**
      * Constructor: it expects the file path and the split expression needed
@@ -50,7 +52,8 @@ public class FileParserSpout extends BaseRichSpout {
     FileParserSpout(String file, String split) {
         file_path = file;
         split_regex = split;
-        generated = 0;
+        generated = 0;          // total number of generated tuples
+        nt_execution = 0;       // number of executions of nextTuple() method
     }
 
     @Override
@@ -73,7 +76,6 @@ public class FileParserSpout extends BaseRichSpout {
      */
     @Override
     public void nextTuple() {
-
         File txt = new File(file_path);
         ArrayList<String> entities = new ArrayList<>();
         ArrayList<String> records = new ArrayList<>();
@@ -88,7 +90,6 @@ public class FileParserSpout extends BaseRichSpout {
                 generated++;
                 LOG.debug("[FileParserSpout] EntityID: {} Record: {}", line[0], line[1]);
             }
-            LOG.info("[FileParserSpout] No more lines to read, closing file...");
             scan.close();
         } catch (FileNotFoundException | NullPointerException e) {
             LOG.error("The file {} does not exists", file_path);
@@ -99,11 +100,15 @@ public class FileParserSpout extends BaseRichSpout {
         for (int i = 0; i < entities.size(); i++) {
             collector.emit(new Values(entities.get(i), records.get(i)));
         }
+
+        nt_execution++;
+        nt_end = System.nanoTime(); // method end time in nanoseconds
     }
 
     @Override
     public void close() {
-        LOG.info("[FileParserSpout] Terminated.");
+        LOG.info("[FileParserSpout] Terminated after {} generations.", nt_execution);
+        LOG.info("[FileParserSpout] Generation ended in {} ms.", (nt_end - t_start) / 1000000);
 
         long t_end = System.nanoTime();  // spout stop time in nanoseconds
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
