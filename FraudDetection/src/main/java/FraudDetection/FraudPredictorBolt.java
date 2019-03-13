@@ -76,6 +76,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
         }
         collector.ack(tuple);
 
+        processed++;
         t_end = System.nanoTime();
     }
 
@@ -83,8 +84,8 @@ public class FraudPredictorBolt extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[FraudPredictorBolt] Processed {} elements in {} ms (found {} outliers).\n" +
-                        "Source bandwidth is {} tuples per second." +
+        LOG.info("[FraudPredictorBolt] Processed {} elements in {} ms (found {} outliers). " +
+                        "Source bandwidth is {} tuples per second. " +
                         "Results throughput is {} tuples per second.",
                 processed, t_elapsed, outliers,
                 processed / (t_elapsed / 1000),
