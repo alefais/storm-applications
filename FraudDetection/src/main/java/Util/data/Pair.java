@@ -1,12 +1,12 @@
 /*
  * chombo: Hadoop Map Reduce utility
  * Author: Pranab Ghosh
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License. You may
  * obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0 
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +15,8 @@
  * permissions and limitations under the License.
  */
 
-package Util;
+
+package Util.data;
 
 /**
  * Generic Pair class
@@ -32,8 +33,8 @@ public class Pair<L,R>  {
     }
 
     public Pair(L left, R right) {
-        this.left = left;
-        this.right = right;
+      this.left = left;
+      this.right = right;
     }
 
     public L getLeft() {
@@ -53,7 +54,7 @@ public class Pair<L,R>  {
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode() { 
         return left.hashCode() ^ right.hashCode();
     }
 
@@ -63,7 +64,7 @@ public class Pair<L,R>  {
         if (null != other && other instanceof Pair) {
             Pair pairOther = (Pair) other;
             isEqual =  this.left.equals(pairOther.left) &&
-                    this.right.equals(pairOther.right);
+                   this.right.equals(pairOther.right); 
         }
         return isEqual;
     }

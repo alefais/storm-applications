@@ -1,7 +1,8 @@
-package Util;
+package Util.config;
 
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.storm.Config;
+import org.apache.commons.lang.math.NumberUtils;
+import Util.data.DataTypeUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +14,7 @@ public class Configuration extends Config {
     public static final String METRICS_INTERVAL_VALUE = "metrics.interval.value";
     public static final String METRICS_INTERVAL_UNIT  = "metrics.interval.unit";
     public static final String METRICS_OUTPUT         = "metrics.output";
-
+    
     public String getString(String key) {
         String val = null;
         Object obj = get(key);
@@ -42,13 +43,13 @@ public class Configuration extends Config {
     public int getInt(String key) {
         int val = 0;
         Object obj = get(key);
-
+        
         if (null != obj) {
-            if (obj instanceof Integer) {
-                val = (Integer)obj;
-            } else if (obj instanceof Number) {
-                val = ((Number)obj).intValue();
-            } else if (obj instanceof String) {
+        if (obj instanceof Integer) {
+            val = (Integer)obj;
+        } else if (obj instanceof Number) {
+            val = ((Number)obj).intValue();
+        } else if (obj instanceof String) {
                 try {
                     val = Integer.parseInt((String)obj);
                 } catch (NumberFormatException ex) {
@@ -60,7 +61,7 @@ public class Configuration extends Config {
         } else {
             throw new IllegalArgumentException("Nothing found in configuration for " + key);
         }
-
+        
         return val;
     }
 
@@ -162,14 +163,14 @@ public class Configuration extends Config {
         }
         return val;
     }
-
+    
     public int[] getIntArray(String key, int[] def) {
         return getIntArray(key, ",", def);
     }
-
+    
     public int[] getIntArray(String key, String separator, int[] def) {
         int[] values = null;
-
+        
         try {
             values = getIntArray(key, separator);
         } catch (IllegalArgumentException ex) {
@@ -178,7 +179,7 @@ public class Configuration extends Config {
 
         return values;
     }
-
+    
     public int[] getIntArray(String key, String separator) {
         String value   = getString(key);
         String[] items = value.split(separator);
@@ -192,24 +193,24 @@ public class Configuration extends Config {
                         + key + " cannot be parsed to an Integer array", ex);
             }
         }
-
+            
         return values;
     }
 
     public boolean exists(String key) {
         return containsKey(key);
     }
-
+    
     public static Configuration fromMap(Map map) {
         Configuration config = new Configuration();
-
+        
         for (Object k : map.keySet()) {
             String key   = (String) k;
             Object value = map.get(key);
-
+            
             if (value instanceof String) {
                 String str = (String) value;
-
+                
                 if (DataTypeUtils.isInteger(str)) {
                     config.put(key, Integer.parseInt(str));
                 } else if (NumberUtils.isNumber(str)) {
@@ -223,43 +224,43 @@ public class Configuration extends Config {
                 config.put(key, value);
             }
         }
-
+        
         return config;
     }
-
+    
     public static Configuration fromProperties(Properties properties) {
         Configuration config = new Configuration();
 
         for (String key : properties.stringPropertyNames()) {
             config.put(key, parseString(properties.getProperty(key)));
         }
-
+        
         return config;
     }
-
+    
     public static Configuration fromStr(String str) {
         Map<String, String> map = strToMap(str);
         Configuration config = new Configuration();
-
+        
         for (String key : map.keySet()) {
             config.put(key, parseString(map.get(key)));
         }
-
+        
         return config;
     }
-
+    
     public static Map<String, String> strToMap(String str) {
         Map<String, String> map = new HashMap<>();
         String[] arguments = str.split(",");
-
+        
         for (String arg : arguments) {
             String[] kv = arg.split("=");
             map.put(kv[0].trim(), kv[1].trim());
         }
-
+        
         return map;
     }
-
+    
     private static Object parseString(String value) {
         if (DataTypeUtils.isInteger(value)) {
             return Integer.parseInt(value);
@@ -268,7 +269,7 @@ public class Configuration extends Config {
         } else if (value.equals("true") || value.equals("false")) {
             return Boolean.parseBoolean(value);
         }
-
+        
         return value;
     }
 }

@@ -1,11 +1,12 @@
 package FraudDetection;
 
-import Constants.Conf;
-import Constants.Field;
+import Constants.FraudDetectionConstants.Conf;
+import Constants.FraudDetectionConstants.Field;
 import MarkovModelPrediction.MarkovModelPredictor;
 import MarkovModelPrediction.ModelBasedPredictor;
 import MarkovModelPrediction.Prediction;
-import Util.Configuration;
+import Meter.BoltMeterHook;
+import Util.config.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -19,6 +20,16 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+import static Util.config.Configuration.METRICS_ENABLED;
+
+/**
+ * The bolt is in charge of implementing outliers detection.
+ * Given a transaction sequence of a customer, there is a
+ * probability associated with each path of state transition,
+ * which indicates the chances of fraudolent activities.
+ *
+ * @author Alessandra Fais
+ */
 public class FraudPredictorBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(FraudPredictorBolt.class);
 
@@ -28,16 +39,21 @@ public class FraudPredictorBolt extends BaseRichBolt {
 
     private ModelBasedPredictor predictor;
 
-
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
-        collector = outputCollector;
+        LOG.info("[FraudPredictorBolt] Preparing configuration.");
 
         config = Configuration.fromMap(stormConf);
         context = topologyContext;
+        collector = outputCollector;
+
+        if (config.getBoolean(METRICS_ENABLED, false)) {
+            context.addTaskHook(new BoltMeterHook());
+        }
 
         String strategy = config.getString(Conf.PREDICTOR_MODEL);
         if (strategy.equals("mm")) {
+            LOG.info("[FraudPredictorBolt] Creating Markov Model.");
             predictor = new MarkovModelPredictor(config);
         }
     }
@@ -49,16 +65,19 @@ public class FraudPredictorBolt extends BaseRichBolt {
 
         String entityID = tuple.getStringByField(Field.ENTITY_ID);
         String record = tuple.getStringByField(Field.RECORD_DATA);
-        Prediction p = predictor.execute(entityID, record);
 
+        Prediction p = predictor.execute(entityID, record);
         // send outliers
         if (p.isOutlier()) {
             collector.emit(tuple, new Values(entityID, p.getScore(), StringUtils.join(p.getStates(), ",")));
+
+            LOG.info("[FraudPredictorBolt] Sending outlier: EntityID {} score {} states {}",
+                    entityID, p.getScore(), StringUtils.join(p.getStates(), ","));
         }
         collector.ack(tuple);
 
         long t_end = System.nanoTime();
-        LOG.warn("[Bolt] execute ~ {} ms.", (t_end - t_start) / 1000000); // bolt execution time
+        LOG.debug("[Bolt] execute ~ {} ms.", (t_end - t_start) / 1000000); // bolt execution time
     }
 
     @Override

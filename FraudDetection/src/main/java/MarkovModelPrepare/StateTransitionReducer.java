@@ -1,6 +1,6 @@
 package MarkovModelPrepare;
 
-import Util.Tuple;
+import Util.data.Tuple;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;

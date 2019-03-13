@@ -17,6 +17,7 @@
 
 package Util;
 
+import Util.data.Tuple;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;

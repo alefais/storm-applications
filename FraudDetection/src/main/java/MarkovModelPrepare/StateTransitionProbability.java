@@ -18,7 +18,7 @@
 
 package MarkovModelPrepare;
 
-import Util.TabularData;
+import Util.data.TabularData;
 
 /**
  * Markov state transition probability matrix
