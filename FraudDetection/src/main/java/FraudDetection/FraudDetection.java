@@ -73,7 +73,7 @@ public class FraudDetection {
             // run the topology
             try {
                 if (ex_mode.equals("local"))
-                    runTopologyLocally(topology, topology_name, conf, 300); // 5 minutes
+                    runTopologyLocally(topology, topology_name, conf, 120); // 2 minutes
                 else if (ex_mode.equals("remote"))
                     runTopologyRemotely(topology, topology_name, conf);
             } catch (InterruptedException e) {
