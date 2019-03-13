@@ -40,7 +40,6 @@ public class FileParserSpout extends BaseRichSpout {
 
     private long t_start;
     private long generated;
-    private boolean completed;
 
     /**
      * Constructor: it expects the file path and the split expression needed
@@ -52,7 +51,6 @@ public class FileParserSpout extends BaseRichSpout {
         file_path = file;
         split_regex = split;
         generated = 0;
-        completed = false;
     }
 
     @Override
