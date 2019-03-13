@@ -47,8 +47,9 @@ public class ConsoleSink extends BaseRichBolt {
         String entityID = tuple.getStringByField(Field.ENTITY_ID);
         Double score = tuple.getDoubleByField(Field.SCORE);
         String states = tuple.getStringByField(Field.STATES);
+        processed++;
 
-        LOG.info("[ConsoleSink] EntityID {}, score {}, states {}.", entityID, score, states);
+        LOG.debug("[ConsoleSink] EntityID {}, score {}, states {}.", entityID, score, states);
 
         /*
         Fields schema = context.getComponentOutputFields(tuple.getSourceGlobalStreamId());
@@ -67,7 +68,7 @@ public class ConsoleSink extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[FraudPredictorBolt] Processed {} tuples in {} ms. " +
+        LOG.info("[FraudPredictorBolt] Processed {} tuples (outliers) in {} ms. " +
                         "Throughput is {} tuples per second.",
                 processed, t_elapsed, processed / (t_elapsed / 1000));
     }
