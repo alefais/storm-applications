@@ -11,6 +11,7 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -31,8 +32,11 @@ public class ConsoleSink extends BaseRichBolt {
     private long processed;
     private int par_deg;
 
+    private ArrayList<Long> tuple_latencies;
+
     ConsoleSink(int par_deg) {
         this.par_deg = par_deg;
+        tuple_latencies = new ArrayList<>();
     }
 
     @Override
@@ -52,9 +56,14 @@ public class ConsoleSink extends BaseRichBolt {
         String entityID = tuple.getStringByField(Field.ENTITY_ID);
         Double score = tuple.getDoubleByField(Field.SCORE);
         String states = tuple.getStringByField(Field.STATES);
-        processed++;
+        Long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
+        processed++;
         LOG.debug("[ConsoleSink] EntityID {}, score {}, states {}.", entityID, score, states);
+
+        Long now = System.nanoTime();
+        Long tuple_latency = (now - timestamp); // tuple latency in nanoseconds
+        tuple_latencies.add(tuple_latency);
 
         collector.ack(tuple);
 
@@ -63,15 +72,24 @@ public class ConsoleSink extends BaseRichBolt {
 
     @Override
     public void cleanup() {
+        // evaluate bandwidth
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
         LOG.info("[ConsoleSink] Processed {} tuples (outliers) in {} ms. " +
                         "Bandwidth is {} tuples per second.",
                 processed, t_elapsed, (processed / (t_elapsed / 1000) * par_deg));
+
+        // evaluate latency
+        long acc = 0L;
+        for (Long tl : tuple_latencies) {
+            acc += tl;
+        }
+        long avg_latency = acc / tuple_latencies.size(); // average latency in nanoseconds
+        LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.SCORE, Field.STATES));
+        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.SCORE, Field.STATES, Field.TIMESTAMP));
     }
 }

@@ -68,13 +68,15 @@ public class FraudPredictorBolt extends BaseRichBolt {
     public void execute(Tuple tuple) {
         String entityID = tuple.getStringByField(Field.ENTITY_ID);
         String record = tuple.getStringByField(Field.RECORD_DATA);
+        Long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
         Prediction p = predictor.execute(entityID, record);
 
         // send outliers
         if (p.isOutlier()) {
             outliers++;
-            collector.emit(tuple, new Values(entityID, p.getScore(), StringUtils.join(p.getStates(), ",")));
+            collector.emit(tuple,
+                    new Values(entityID, p.getScore(), StringUtils.join(p.getStates(), ","), timestamp));
 
             LOG.debug("[FraudPredictorBolt] Sending outlier: EntityID {} score {} states {}",
                     entityID, p.getScore(), StringUtils.join(p.getStates(), ","));
@@ -97,7 +99,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.SCORE, Field.STATES));
+        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.SCORE, Field.STATES, Field.TIMESTAMP));
     }
 }
 

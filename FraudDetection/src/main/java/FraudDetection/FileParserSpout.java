@@ -98,7 +98,7 @@ public class FileParserSpout extends BaseRichSpout {
 
         // emit tuples
         for (int i = 0; i < entities.size(); i++) {
-            collector.emit(new Values(entities.get(i), records.get(i)));
+            collector.emit(new Values(entities.get(i), records.get(i), System.nanoTime()));
         }
 
         nt_execution++;
@@ -117,6 +117,6 @@ public class FileParserSpout extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.RECORD_DATA));
+        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.RECORD_DATA, Field.TIMESTAMP));
     }
 }
