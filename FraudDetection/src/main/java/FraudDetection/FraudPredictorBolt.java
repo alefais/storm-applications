@@ -39,6 +39,13 @@ public class FraudPredictorBolt extends BaseRichBolt {
     private long t_end;
     private long processed;
     private long outliers;
+    private int n_predictors;
+    private int n_sinks;
+
+    FraudPredictorBolt(int n_predictors, int n_sinks) {
+        this.n_predictors = n_predictors;
+        this.n_sinks = n_sinks;
+    }
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
@@ -88,8 +95,8 @@ public class FraudPredictorBolt extends BaseRichBolt {
                         "Source bandwidth is {} tuples per second. " +
                         "Sink throughput is {} tuples per second.",
                 processed, t_elapsed, outliers,
-                processed / (t_elapsed / 1000),
-                outliers / (t_elapsed / 1000));
+                (processed / (t_elapsed / 1000) * n_predictors),
+                (outliers / (t_elapsed / 1000) * n_sinks));
     }
 
     @Override

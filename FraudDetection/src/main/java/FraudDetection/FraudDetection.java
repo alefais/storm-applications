@@ -97,7 +97,7 @@ public class FraudDetection {
     private static void runTopologyLocally(StormTopology topology, String topology_name, Config conf, int runtime_seconds)
             throws InterruptedException {
 
-        LOG.info("[main] Starting Storm on local mode to run for {} seconds.", runtime_seconds);
+        LOG.info("[main] Starting Storm in local mode to run for {} seconds.", runtime_seconds);
         LocalCluster cluster = new LocalCluster();
 
         LOG.info("[main] Topology {} submitted.", topology_name);

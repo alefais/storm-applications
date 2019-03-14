@@ -29,6 +29,11 @@ public class ConsoleSink extends BaseRichBolt {
     private long t_start;
     private long t_end;
     private long processed;
+    private int par_deg;
+
+    ConsoleSink(int parallelism_degree) {
+        par_deg = parallelism_degree;
+    }
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
@@ -51,14 +56,6 @@ public class ConsoleSink extends BaseRichBolt {
 
         LOG.debug("[ConsoleSink] EntityID {}, score {}, states {}.", entityID, score, states);
 
-        /*
-        Fields schema = context.getComponentOutputFields(tuple.getSourceGlobalStreamId());
-        String line = "";
-        for (int i = 0; i < tuple.size(); i++) {
-            if (i != 0) line += ", ";
-            line += String.format("%s=%s", schema.get(i), tuple.getValue(i));
-        }
-        System.out.println(line);*/
         collector.ack(tuple);
 
         t_end = System.nanoTime();
@@ -68,9 +65,9 @@ public class ConsoleSink extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[FraudPredictorBolt] Processed {} tuples (outliers) in {} ms. " +
-                        "Throughput is {} tuples per second.",
-                processed, t_elapsed, processed / (t_elapsed / 1000));
+        LOG.info("[ConsoleSink] Processed {} tuples (outliers) in {} ms. " +
+                        "Bandwidth is {} tuples per second.",
+                processed, t_elapsed, (processed / (t_elapsed / 1000) * par_deg));
     }
 
     @Override
