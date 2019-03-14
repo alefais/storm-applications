@@ -39,12 +39,10 @@ public class FraudPredictorBolt extends BaseRichBolt {
     private long t_end;
     private long processed;
     private long outliers;
-    private int n_predictors;
-    private int n_sinks;
+    private int par_deg;
 
-    FraudPredictorBolt(int n_predictors, int n_sinks) {
-        this.n_predictors = n_predictors;
-        this.n_sinks = n_sinks;
+    FraudPredictorBolt(int par_deg) {
+        this.par_deg = par_deg;
     }
 
     @Override
@@ -92,11 +90,9 @@ public class FraudPredictorBolt extends BaseRichBolt {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
         LOG.info("[FraudPredictorBolt] Processed {} tuples in {} ms (found {} outliers). " +
-                        "Source bandwidth is {} tuples per second. " +
-                        "Sink throughput is {} tuples per second.",
+                        "Source bandwidth is {} tuples per second.",
                 processed, t_elapsed, outliers,
-                (processed / (t_elapsed / 1000) * n_predictors),
-                (outliers / (t_elapsed / 1000) * n_sinks));
+                (processed / (t_elapsed / 1000) * par_deg));
     }
 
     @Override

@@ -31,8 +31,8 @@ public class ConsoleSink extends BaseRichBolt {
     private long processed;
     private int par_deg;
 
-    ConsoleSink(int parallelism_degree) {
-        par_deg = parallelism_degree;
+    ConsoleSink(int par_deg) {
+        this.par_deg = par_deg;
     }
 
     @Override

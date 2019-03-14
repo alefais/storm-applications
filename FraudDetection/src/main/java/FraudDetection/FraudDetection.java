@@ -49,7 +49,7 @@ public class FraudDetection {
             TopologyBuilder builder = new TopologyBuilder();
             builder.setSpout("spout", new FileParserSpout(file_path, ","), 1);
 
-            builder.setBolt("counter_bolt", new FraudPredictorBolt(bolt_par_deg, sink_par_deg), bolt_par_deg)
+            builder.setBolt("counter_bolt", new FraudPredictorBolt(bolt_par_deg), bolt_par_deg)
                     .fieldsGrouping("spout", new Fields(Field.ENTITY_ID));
 
             builder.setBolt("sink", new ConsoleSink(sink_par_deg), sink_par_deg)
