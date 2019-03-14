@@ -32,25 +32,27 @@ public class FraudDetection {
                     "In order to correctly run FraudDetection app you need to pass the following arguments:\n" +
                     " file path\n" +
                     "Optional arguments:\n" +
-                    " parallelism degree (default 1)\n" +
+                    " bolt parallelism degree (default 1)\n" +
+                    " sink parallelism degree (default 1)\n" +
                     " topology name (default FraudDetection)\n" +
                     " execution mode (default local)";
             LOG.error(alert);
         } else {
             // parse command line arguments
             String file_path = args[0];
-            Integer parallelism_degree = (args.length > 1) ? new Integer(args[1]) : 1;
-            String topology_name = (args.length > 2) ? args[2] : "FraudDetection";
-            String ex_mode = (args.length > 3) ? args[3] : "local";
+            Integer bolt_par_deg = (args.length > 1) ? new Integer(args[1]) : 1;
+            Integer sink_par_deg = (args.length > 2) ? new Integer(args[2]) : 1;
+            String topology_name = (args.length > 3) ? args[3] : "FraudDetection";
+            String ex_mode = (args.length > 4) ? args[4] : "local";
 
             // prepare the topology
             TopologyBuilder builder = new TopologyBuilder();
             builder.setSpout("spout", new FileParserSpout(file_path, ","), 1);
 
-            builder.setBolt("counter_bolt", new FraudPredictorBolt(), parallelism_degree)
+            builder.setBolt("counter_bolt", new FraudPredictorBolt(bolt_par_deg, sink_par_deg), bolt_par_deg)
                     .fieldsGrouping("spout", new Fields(Field.ENTITY_ID));
 
-            builder.setBolt("sink", new ConsoleSink(), parallelism_degree)
+            builder.setBolt("sink", new ConsoleSink(sink_par_deg), sink_par_deg)
                     .fieldsGrouping("counter_bolt", new Fields(Field.ENTITY_ID));
 
             // prepare the configuration
