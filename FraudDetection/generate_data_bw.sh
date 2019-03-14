@@ -36,13 +36,14 @@ do
 
 	if [ -f logs/output_fd-1-$i-$j.log ]; then
 
-		# prints: #generated tuples, spout service time, generation rate
+		# prints: number of generated tuples, spout service time, generation rate
 		grep "FileParserSpout" logs/output_fd-1-$i-$j.log | awk '{ if (NR == 8) print $8 "," $11 "," $16 }' > aggregates/FileParserSpout-1-$i-$j.csv
 
-		# prints: #processed tuples, bolt service time, #outliers, source bandwidth
+		# prints: number of processed tuples, bolt service time, #outliers, source bandwidth
 		grep "FraudPredictorBolt" logs/output_fd-1-$i-$j.log | awk '{ if (NR == 3) print $8 "," $11 "," $14 "," $19 }' > aggregates/FraudPredictorBolt-1-$i-$j.csv
 
-		# prints: #processed tuples, sink service time, sink bandwidth
+		# prints: number of processed tuples, sink service time, sink bandwidth, average latency
 		grep "ConsoleSink" logs/output_fd-1-$i-$j.log | awk '{ if (NR == 2) print $8 "," $12 "," $16 }' > aggregates/ConsoleSink-1-$i-$j.csv
+		grep "ConsoleSink" logs/output_fd-1-$i-$j.log | awk '{ if (NR == 3) print $9 }' >> aggregates/ConsoleSink-1-$i-$j.csv
 	fi
 done 
