@@ -20,6 +20,7 @@ public interface FraudDetectionConstants extends BaseConstants {
     }
     
     interface Field {
+        String TIMESTAMP = "timestamp";
         String ENTITY_ID = "entityID";
         String RECORD_DATA = "recordData";
         String SCORE = "score";
