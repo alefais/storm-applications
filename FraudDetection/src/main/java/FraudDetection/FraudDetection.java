@@ -32,22 +32,26 @@ public class FraudDetection {
                     "In order to correctly run FraudDetection app you need to pass the following arguments:\n" +
                     " file path\n" +
                     "Optional arguments:\n" +
+                    " source parallelism degree (default 1)\n" +
                     " bolt parallelism degree (default 1)\n" +
                     " sink parallelism degree (default 1)\n" +
+                    " source generation rate (default -1, generate at the max possible rate)\n" +
                     " topology name (default FraudDetection)\n" +
                     " execution mode (default local)";
             LOG.error(alert);
         } else {
             // parse command line arguments
             String file_path = args[0];
-            Integer bolt_par_deg = (args.length > 1) ? new Integer(args[1]) : 1;
-            Integer sink_par_deg = (args.length > 2) ? new Integer(args[2]) : 1;
-            String topology_name = (args.length > 3) ? args[3] : "FraudDetection";
-            String ex_mode = (args.length > 4) ? args[4] : "local";
+            Integer source_par_deg = (args.length > 1) ? new Integer(args[1]) : 1;
+            Integer bolt_par_deg = (args.length > 2) ? new Integer(args[2]) : 1;
+            Integer sink_par_deg = (args.length > 3) ? new Integer(args[3]) : 1;
+            Integer gen_rate = (args.length > 4) ? new Integer(args[4]) : -1;
+            String topology_name = (args.length > 5) ? args[5] : "FraudDetection";
+            String ex_mode = (args.length > 6) ? args[6] : "local";
 
             // prepare the topology
             TopologyBuilder builder = new TopologyBuilder();
-            builder.setSpout("spout", new FileParserSpout(file_path, ","), 1);
+            builder.setSpout("spout", new FileParserSpout(file_path, ",", gen_rate), source_par_deg);
 
             builder.setBolt("counter_bolt", new FraudPredictorBolt(bolt_par_deg), bolt_par_deg)
                     .fieldsGrouping("spout", new Fields(Field.ENTITY_ID));

@@ -72,20 +72,24 @@ public class ConsoleSink extends BaseRichBolt {
 
     @Override
     public void cleanup() {
-        // evaluate bandwidth
-        long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
+        if (processed == 0) {
+            LOG.info("[ConsoleSink] No outliers found.");
+        } else {
+            // evaluate bandwidth
+            long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[ConsoleSink] Processed {} tuples (outliers) in {} ms. " +
-                        "Bandwidth is {} tuples per second.",
-                processed, t_elapsed, (processed / (t_elapsed / 1000) * par_deg));
+            LOG.info("[ConsoleSink] Processed {} tuples (outliers) in {} ms. " +
+                            "Bandwidth is {} tuples per second.",
+                    processed, t_elapsed, (processed / (t_elapsed / 1000) * par_deg));
 
-        // evaluate latency
-        long acc = 0L;
-        for (Long tl : tuple_latencies) {
-            acc += tl;
+            // evaluate latency
+            long acc = 0L;
+            for (Long tl : tuple_latencies) {
+                acc += tl;
+            }
+            long avg_latency = acc / tuple_latencies.size(); // average latency in nanoseconds
+            LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
         }
-        long avg_latency = acc / tuple_latencies.size(); // average latency in nanoseconds
-        LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
     }
 
     @Override
