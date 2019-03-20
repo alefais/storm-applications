@@ -56,7 +56,7 @@ public class FraudDetection {
             builder.setBolt("counter_bolt", new FraudPredictorBolt(bolt_par_deg), bolt_par_deg)
                     .fieldsGrouping("spout", new Fields(Field.ENTITY_ID));
 
-            builder.setBolt("sink", new ConsoleSink(sink_par_deg), sink_par_deg)
+            builder.setBolt("sink", new ConsoleSink(sink_par_deg, gen_rate), sink_par_deg)
                     .fieldsGrouping("counter_bolt", new Fields(Field.ENTITY_ID));
 
             // prepare the configuration
