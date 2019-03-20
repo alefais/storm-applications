@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -86,6 +87,33 @@ public class FileParserSpout extends BaseRichSpout {
      */
     @Override
     public void nextTuple() {
+        //nextTupleAll();
+        nextTupleParseAndGen();
+    }
+
+    @Override
+    public void close() {
+        long t_elapsed = (nt_end - t_start) / 1000000;
+
+        LOG.info("[FileParserSpout] Terminated after {} generations.", nt_execution);
+        LOG.info("[FileParserSpout] Generated {} tuples in {} ms. Emitted {} tuples in {} ms. " +
+                        "Source bandwidth is {} tuples per second.",
+                generated, t_elapsed,
+                emitted + (rate * reset), t_elapsed,
+                generated / (t_elapsed / 1000));
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
+        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.RECORD_DATA, Field.TIMESTAMP));
+    }
+
+    //------------------------------ private methods ---------------------------
+
+    /*
+        For each line of the input file parse and emit a new tuple.
+     */
+    private void nextTupleAll() {
         File txt = new File(file_path);
         String entity;
         String record;
@@ -101,15 +129,17 @@ public class FileParserSpout extends BaseRichSpout {
                 record = line[1];
                 LOG.debug("[FileParserSpout] EntityID: {} Record: {}", entity, record);
 
-                if (rate == -1) {
+                if (rate == -1) {   // emit at the maximum possible rate
                     collector.emit(new Values(entity, record, System.nanoTime()));
                     emitted++;
-                } else {
+                } else {            // emit at the given rate
+                    long t_now = System.nanoTime();
                     if (emitted >= rate) {
-                        long t_now = System.nanoTime();
-                        LOG.info("[FileParserSpout] emitted {} >= rate {} in {} ms", emitted, rate, (t_now - t_init) / 1000000);
+                        LOG.debug("[FileParserSpout] emitted {} VS rate {} in {} ms (delay: {} ns)",
+                                emitted, rate, (t_now - t_init) / 1000000, (double)interval / rate);
+
                         if (t_now - t_init <= interval) {
-                            LOG.info("[FileParserSpout] waste {} ns.", interval - (t_now - t_init));
+                            LOG.debug("[FileParserSpout] waste {} ns.", interval - (t_now - t_init));
                             active_delay(interval - (t_now - t_init));
                         }
                         emitted = 0;
@@ -118,7 +148,8 @@ public class FileParserSpout extends BaseRichSpout {
                     }
                     collector.emit(new Values(entity, record, System.nanoTime()));
                     emitted++;
-                    active_delay((double)rate / interval);
+
+                    active_delay((double)interval / rate);
                 }
                 generated++;
             }
@@ -132,8 +163,10 @@ public class FileParserSpout extends BaseRichSpout {
         nt_end = System.nanoTime();
     }
 
-    /* First version of the nextTuple(): parsing and generation are separated phases
-    public void nextTuple() {
+    /*
+        First parse the whole input file and then start emitting tuples.
+     */
+    private void nextTupleParseAndGen() {
         File txt = new File(file_path);
         ArrayList<String> entities = new ArrayList<>();
         ArrayList<String> records = new ArrayList<>();
@@ -155,21 +188,21 @@ public class FileParserSpout extends BaseRichSpout {
         }
 
         // emit tuples
-        if (rate == -1) { // at the maximum possible rate
-            for (int i = 0; i < entities.size(); i++) {
+        int interval = 1000000000; // one second (nanoseconds)
+        long t_init = System.nanoTime();
+
+        for (int i = 0; i < entities.size(); i++) {
+            if (rate == -1) {       // at the maximum possible rate
                 collector.emit(new Values(entities.get(i), records.get(i), System.nanoTime()));
                 emitted++;
-            }
-        } else { // at the given rate, with a bursty emission
-            int interval = 1000000000; // one second (nanoseconds)
-            long t_init = System.nanoTime();
+            } else {                // at the given rate
+                long t_now = System.nanoTime();
+                if (emitted >= rate) {
+                    LOG.debug("[FileParserSpout] emitted {} VS rate {} in {} ms (delay: {} ns)",
+                            emitted, rate, (t_now - t_init) / 1000000, (double)interval / rate);
 
-            for (int i = 0; i < entities.size(); i++) {
-                if (emitted > rate) {
-                    long t_now = System.nanoTime();
-                    LOG.info("[FileParserSpout] emitted {} >= rate {} in {} ms", emitted, rate, (t_now - t_init) / 1000000);
                     if (t_now - t_init <= interval) {
-                        LOG.info("[FileParserSpout] waste {} ns.", interval - (t_now - t_init));
+                        LOG.debug("[FileParserSpout] waste {} ns.", interval - (t_now - t_init));
                         active_delay(interval - (t_now - t_init));
                     }
                     emitted = 0;
@@ -178,29 +211,12 @@ public class FileParserSpout extends BaseRichSpout {
                 }
                 collector.emit(new Values(entities.get(i), records.get(i), System.nanoTime()));
                 emitted++;
-                active_delay((double)rate / interval);
+                active_delay((double) interval / rate);
             }
         }
 
         nt_execution++;
         nt_end = System.nanoTime();
-    }*/
-
-    @Override
-    public void close() {
-        long t_elapsed = (nt_end - t_start) / 1000000;
-
-        LOG.info("[FileParserSpout] Terminated after {} generations.", nt_execution);
-        LOG.info("[FileParserSpout] Generated {} tuples in {} ms. Emitted {} tuples in {} ms. " +
-                        "Source bandwidth is {} tuples per second.",
-                generated, t_elapsed,
-                emitted + (rate * reset), t_elapsed,
-                generated / (t_elapsed / 1000));
-    }
-
-    @Override
-    public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.RECORD_DATA, Field.TIMESTAMP));
     }
 
     /**
@@ -216,6 +232,6 @@ public class FileParserSpout extends BaseRichSpout {
             t_now = System.nanoTime();
             end = (t_now - t_start) >= nsecs;
         }
-        LOG.info("[FileParserSpout] delay {} ns.", nsecs);
+        LOG.debug("[FileParserSpout] delay {} ns.", nsecs);
     }
 }
