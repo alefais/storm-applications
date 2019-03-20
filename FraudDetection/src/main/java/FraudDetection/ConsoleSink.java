@@ -31,11 +31,13 @@ public class ConsoleSink extends BaseRichBolt {
     private long t_end;
     private long processed;
     private int par_deg;
+    private int gen_rate;
 
     private ArrayList<Long> tuple_latencies;
 
-    ConsoleSink(int par_deg) {
+    ConsoleSink(int par_deg, int gen_rate) {
         this.par_deg = par_deg;
+        this.gen_rate = gen_rate;
         tuple_latencies = new ArrayList<>();
     }
 
@@ -61,9 +63,11 @@ public class ConsoleSink extends BaseRichBolt {
         processed++;
         LOG.debug("[ConsoleSink] EntityID {}, score {}, states {}.", entityID, score, states);
 
-        Long now = System.nanoTime();
-        Long tuple_latency = (now - timestamp); // tuple latency in nanoseconds
-        tuple_latencies.add(tuple_latency);
+        if (gen_rate != -1) {   // evaluate latency
+            Long now = System.nanoTime();
+            Long tuple_latency = (now - timestamp); // tuple latency in nanoseconds
+            tuple_latencies.add(tuple_latency);
+        }
 
         collector.ack(tuple);
 
@@ -75,20 +79,20 @@ public class ConsoleSink extends BaseRichBolt {
         if (processed == 0) {
             LOG.info("[ConsoleSink] No outliers found.");
         } else {
-            // evaluate bandwidth
-            long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
+            if (gen_rate == -1) {  // evaluate bandwidth
+                long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-            LOG.info("[ConsoleSink] Processed {} tuples (outliers) in {} ms. " +
-                            "Bandwidth is {} tuples per second.",
-                    processed, t_elapsed, (processed / (t_elapsed / 1000) * par_deg));
-
-            // evaluate latency
-            long acc = 0L;
-            for (Long tl : tuple_latencies) {
-                acc += tl;
+                LOG.info("[ConsoleSink] Processed {} tuples (outliers) in {} ms. " +
+                                "Bandwidth is {} tuples per second.",
+                        processed, t_elapsed, (processed / (t_elapsed / 1000) * par_deg));
+            } else {  // evaluate latency
+                long acc = 0L;
+                for (Long tl : tuple_latencies) {
+                    acc += tl;
+                }
+                long avg_latency = acc / tuple_latencies.size(); // average latency in nanoseconds
+                LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
             }
-            long avg_latency = acc / tuple_latencies.size(); // average latency in nanoseconds
-            LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
         }
     }
 
