@@ -35,15 +35,15 @@ public class ConsoleSink extends BaseRichBolt {
 
     private ArrayList<Long> tuple_latencies;
 
-    ConsoleSink(int par_deg, int gen_rate) {
-        this.par_deg = par_deg;
-        this.gen_rate = gen_rate;
+    ConsoleSink(int p_deg, int g_rate) {
+        par_deg = p_deg;         // sink parallelism degree
+        gen_rate = g_rate;       // generation rate of the source (spout)
         tuple_latencies = new ArrayList<>();
     }
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
-        LOG.info("[ConsoleSink] Started.");
+        LOG.info("[ConsoleSink] Started ({} replicas).", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         processed = 0;               // total number of processed tuples
@@ -69,7 +69,7 @@ public class ConsoleSink extends BaseRichBolt {
             tuple_latencies.add(tuple_latency);
         }
 
-        collector.ack(tuple);
+        //collector.ack(tuple);
 
         t_end = System.nanoTime();
     }
@@ -84,13 +84,15 @@ public class ConsoleSink extends BaseRichBolt {
 
                 LOG.info("[ConsoleSink] Processed {} tuples (outliers) in {} ms. " +
                                 "Bandwidth is {} tuples per second.",
-                        processed, t_elapsed, (processed / (t_elapsed / 1000) * par_deg));
+                        processed, t_elapsed,
+                        processed / (t_elapsed / 1000));  // tuples per second
             } else {  // evaluate latency
                 long acc = 0L;
                 for (Long tl : tuple_latencies) {
                     acc += tl;
                 }
-                long avg_latency = acc / tuple_latencies.size(); // average latency in nanoseconds
+                double avg_latency = (double) acc / tuple_latencies.size(); // average latency in nanoseconds
+                LOG.info("[ConsoleSink] Processed tuples: {}. Timestamps registered: {}.", processed, tuple_latencies.size());
                 LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
             }
         }

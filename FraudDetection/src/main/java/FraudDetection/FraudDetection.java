@@ -42,22 +42,22 @@ public class FraudDetection {
         } else {
             // parse command line arguments
             String file_path = args[0];
-            Integer source_par_deg = (args.length > 1) ? new Integer(args[1]) : 1;
-            Integer bolt_par_deg = (args.length > 2) ? new Integer(args[2]) : 1;
-            Integer sink_par_deg = (args.length > 3) ? new Integer(args[3]) : 1;
-            Integer gen_rate = (args.length > 4) ? new Integer(args[4]) : -1;
+            int source_par_deg = (args.length > 1) ? new Integer(args[1]) : 1;
+            int bolt_par_deg = (args.length > 2) ? new Integer(args[2]) : 1;
+            int sink_par_deg = (args.length > 3) ? new Integer(args[3]) : 1;
+            int gen_rate = (args.length > 4) ? new Integer(args[4]) : -1;
             String topology_name = (args.length > 5) ? args[5] : "FraudDetection";
             String ex_mode = (args.length > 6) ? args[6] : "local";
 
             // prepare the topology
             TopologyBuilder builder = new TopologyBuilder();
-            builder.setSpout("spout", new FileParserSpout(file_path, ",", gen_rate), source_par_deg);
+            builder.setSpout("spout", new FileParserSpout(file_path, ",", gen_rate, source_par_deg), source_par_deg);
 
-            builder.setBolt("counter_bolt", new FraudPredictorBolt(bolt_par_deg), bolt_par_deg)
+            builder.setBolt("fraud_predictor", new FraudPredictorBolt(bolt_par_deg), bolt_par_deg)
                     .fieldsGrouping("spout", new Fields(Field.ENTITY_ID));
 
             builder.setBolt("sink", new ConsoleSink(sink_par_deg, gen_rate), sink_par_deg)
-                    .fieldsGrouping("counter_bolt", new Fields(Field.ENTITY_ID));
+                    .fieldsGrouping("fraud_predictor", new Fields(Field.ENTITY_ID));
 
             // prepare the configuration
             Config conf = new Config();

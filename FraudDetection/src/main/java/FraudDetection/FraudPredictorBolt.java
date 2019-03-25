@@ -41,13 +41,13 @@ public class FraudPredictorBolt extends BaseRichBolt {
     private long outliers;
     private int par_deg;
 
-    FraudPredictorBolt(int par_deg) {
-        this.par_deg = par_deg;
+    FraudPredictorBolt(int p_deg) {
+        par_deg = p_deg;     // bolt parallelism degree
     }
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
-        LOG.info("[FraudPredictorBolt] Started.");
+        LOG.info("[FraudPredictorBolt] Started ({} replicas).", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         processed = 0;               // total number of processed tuples
@@ -81,7 +81,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
             LOG.debug("[FraudPredictorBolt] Sending outlier: EntityID {} score {} states {}",
                     entityID, p.getScore(), StringUtils.join(p.getStates(), ","));
         }
-        collector.ack(tuple);
+        //collector.ack(tuple);
 
         processed++;
         t_end = System.nanoTime();
@@ -94,7 +94,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
         LOG.info("[FraudPredictorBolt] Processed {} tuples in {} ms (found {} outliers). " +
                         "Source bandwidth is {} tuples per second.",
                 processed, t_elapsed, outliers,
-                (processed / (t_elapsed / 1000) * par_deg));
+                processed / (t_elapsed / 1000));  // tuples per second
     }
 
     @Override
