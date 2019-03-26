@@ -1,5 +1,6 @@
 package SpikeDetection;
 
+import Constants.BaseConstants;
 import Constants.SpikeDetectionConstants.*;
 import Util.config.Configuration;
 import org.apache.storm.task.OutputCollector;
@@ -17,10 +18,8 @@ import java.util.LinkedList;
 import java.util.Map;
 
 /**
- * The bolt is in charge of implementing outliers detection.
- * Given a transaction sequence of a customer, there is a
- * probability associated with each path of state transition,
- * which indicates the chances of fraudolent activities.
+ * Calculates the average over a window for distinct elements.
+ * http://github.com/surajwaghulde/storm-example-projects
  *
  * @author Alessandra Fais
  */
@@ -63,16 +62,22 @@ public class MovingAverageBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         String deviceID = tuple.getStringByField(Field.DEVICE_ID);
-        Double next_property_value = tuple.getDoubleByField(Field.VALUE);
-        Long timestamp = tuple.getLongByField(Field.TIMESTAMP);
+        double next_property_value = tuple.getDoubleByField(Field.VALUE);
+        double timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
-        double movingAverageInstant = movingAverage(deviceID, next_property_value);
+        double moving_avg_instant = movingAverage(deviceID, next_property_value);
 
-        collector.emit(tuple, new Values(deviceID, movingAverageInstant, next_property_value, timestamp));
+        /*if (tuple.getSourceStreamId().equalsIgnoreCase(BaseConstants.BaseStream.Marker_STREAM_ID)) {
+            collector.emit(
+                    BaseConstants.BaseStream.Marker_STREAM_ID,
+                    new Values(deviceID, moving_avg_instant, next_property_value, "spike detected",
+                            tuple.getLongByField(BaseConstants.BaseField.MSG_ID),
+                            tuple.getLongByField(BaseConstants.BaseField.SYSTEMTIMESTAMP)));
+        } else*/
+        collector.emit(tuple, new Values(deviceID, moving_avg_instant, next_property_value, timestamp));
 
-        LOG.debug("[MovingAverageBolt] Sending: DeviceID {} avg {} next_value {}",
-                deviceID, movingAverageInstant, next_property_value);
-        //collector.ack(tuple);
+        LOG.info("[MovingAverageBolt] Sending: DeviceID {} avg {} next_value {}",
+                deviceID, moving_avg_instant, next_property_value);
 
         processed++;
         t_end = System.nanoTime();

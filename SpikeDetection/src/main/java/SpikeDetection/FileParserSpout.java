@@ -116,7 +116,7 @@ public class FileParserSpout extends BaseRichSpout {
         ArrayList<String> date = new ArrayList<>();
         ArrayList<String> time = new ArrayList<>();
         ArrayList<Integer> epoc = new ArrayList<>();
-        ArrayList<Integer> devices = new ArrayList<>();
+        ArrayList<String> devices = new ArrayList<>();
         ArrayList<Double> temperature = new ArrayList<>();
         ArrayList<Double> humidity = new ArrayList<>();
         ArrayList<Double> light = new ArrayList<>();
@@ -138,19 +138,30 @@ public class FileParserSpout extends BaseRichSpout {
             while (scan.hasNextLine()) {
                 String[] fields = scan.nextLine().split("\\s+"); // regex quantifier (matches one or many whitespaces)
                 //String date_str = String.format("%s %s", fields[DATE_FIELD], fields[TIME_FIELD]);
+                if (fields.length >= 8) {
+                    date.add(fields[DATE_FIELD]);
+                    time.add(fields[TIME_FIELD]);
+                    epoc.add(new Integer(fields[EPOCH_FIELD]));
+                    devices.add(fields[DEVICEID_FIELD]);
+                    temperature.add(new Double(fields[TEMP_FIELD]));
+                    humidity.add(new Double(fields[HUMID_FIELD]));
+                    light.add(new Double(fields[LIGHT_FIELD]));
+                    voltage.add(new Double(fields[VOLT_FIELD]));
 
-                date.add(fields[DATE_FIELD]);
-                time.add(fields[TIME_FIELD]);
-                epoc.add(new Integer(fields[EPOCH_FIELD]));
-                devices.add(new Integer(fields[DEVICEID_FIELD]));
-                temperature.add(new Double(fields[TEMP_FIELD]));
-                humidity.add(new Double(fields[HUMID_FIELD]));
-                light.add(new Double(fields[LIGHT_FIELD]));
-                voltage.add(new Double(fields[VOLT_FIELD]));
-
-                generated++;
-                LOG.debug("[FileParserSpout] DeviceID: {} Request property: {} {}",
-                        fields[DEVICEID_FIELD], value_field, fields[value_field_key]);
+                    generated++;
+                    LOG.debug("[FileParserSpout] DeviceID: {} Request property: {} {}",
+                            fields[DEVICEID_FIELD], value_field, fields[value_field_key]);
+                    LOG.debug("[FileParserSpout] Fields: {} {} {} {} {} {} {} {}",
+                            fields[DATE_FIELD],
+                            fields[TIME_FIELD],
+                            fields[EPOCH_FIELD],
+                            fields[DEVICEID_FIELD],
+                            fields[TEMP_FIELD],
+                            fields[HUMID_FIELD],
+                            fields[LIGHT_FIELD],
+                            fields[VOLT_FIELD]);
+                } else
+                    LOG.info("[FileParserSpout] Incomplete record.");
             }
             scan.close();
         } catch (FileNotFoundException | NullPointerException e) {
