@@ -33,8 +33,15 @@ public interface BaseConstants {
         String SPOUT = "spout";
         String SINK  = "sink";
     }
-    
+
+    interface BaseField {
+        String SYSTEMTIMESTAMP = "systemtimestamp";
+        String MSG_ID = "systemmsgID";
+        String TEXT = "text";
+    }
+
     interface BaseStream {
         String DEFAULT = Utils.DEFAULT_STREAM_ID;
+        String Marker_STREAM_ID = "marker";
     }
 }
