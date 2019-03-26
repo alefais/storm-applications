@@ -43,21 +43,25 @@ public class SpikeDetection {
             // parse command line arguments
             String file_path = args[0];
             int source_par_deg = (args.length > 1) ? new Integer(args[1]) : 1;
-            int bolt_par_deg = (args.length > 2) ? new Integer(args[2]) : 1;
-            int sink_par_deg = (args.length > 3) ? new Integer(args[3]) : 1;
-            int gen_rate = (args.length > 4) ? new Integer(args[4]) : -1;
-            String topology_name = (args.length > 5) ? args[5] : "SpikeDetection";
-            String ex_mode = (args.length > 6) ? args[6] : "local";
+            int bolt1_par_deg = (args.length > 2) ? new Integer(args[2]) : 1;
+            int bolt2_par_deg = (args.length > 3) ? new Integer(args[3]) : 1;
+            int sink_par_deg = (args.length > 4) ? new Integer(args[4]) : 1;
+            int gen_rate = (args.length > 5) ? new Integer(args[5]) : -1;
+            String topology_name = (args.length > 6) ? args[6] : "SpikeDetection";
+            String ex_mode = (args.length > 7) ? args[7] : "local";
 
             // prepare the topology
             TopologyBuilder builder = new TopologyBuilder();
             builder.setSpout("spout", new FileParserSpout(file_path, gen_rate, source_par_deg), source_par_deg);
 
-            builder.setBolt("moving_average", new MovingAverageBolt(bolt_par_deg), bolt_par_deg)
+            builder.setBolt("moving_average", new MovingAverageBolt(bolt1_par_deg), bolt1_par_deg)
                     .fieldsGrouping("spout", new Fields(Field.DEVICE_ID));
 
-            //builder.setBolt("sink", new ConsoleSink(sink_par_deg, gen_rate), sink_par_deg)
-            //        .fieldsGrouping("fraud_predictor", new Fields(Field.ENTITY_ID));
+            builder.setBolt("spike_detection", new SpikeDetectionBolt(bolt2_par_deg), bolt2_par_deg)
+                    .shuffleGrouping("moving_average");
+
+            builder.setBolt("sink", new ConsoleSink(sink_par_deg, gen_rate), sink_par_deg)
+                    .shuffleGrouping("spike_detection");
 
             // prepare the configuration
             Config conf = new Config();
