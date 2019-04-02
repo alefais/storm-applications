@@ -20,6 +20,7 @@ import java.util.Properties;
 
 /**
  * The topology entry class.
+ *
  * @author Alessandra Fais
  */
 public class FraudDetection {

@@ -22,7 +22,7 @@ import java.util.Scanner;
  * and generating the stream of records toward the FraudPredictorBolt.
  *
  * Format of the input file:
- * EntityID,record_of<EntityID, op_type>
+ * entityID, transactionID, transactionType
  *
  * @author Alessandra Fais
  */
