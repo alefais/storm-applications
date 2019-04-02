@@ -6,7 +6,7 @@ From inside the root directory `FraudDetection/`
 `mvn clean install`
 
 ## Run
-In order to correctly run FraudDetection app you need to pass the input file path as mandatory argument.
+In order to correctly run FraudDetection app you need to pass the input file path as mandatory argument.<br>
 Optional arguments are:
 - source parallelism degree (default 1)
 - bolt parallelism degree (default 1)
