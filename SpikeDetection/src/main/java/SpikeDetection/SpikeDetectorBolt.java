@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Map;
 
-public class SpikeDetectionBolt extends BaseRichBolt {
+public class SpikeDetectorBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MovingAverageBolt.class);
 
     protected OutputCollector collector;
@@ -28,13 +28,13 @@ public class SpikeDetectionBolt extends BaseRichBolt {
     private double spike_threshold;
     private long spikes;
 
-    SpikeDetectionBolt(int p_deg) {
+    SpikeDetectorBolt(int p_deg) {
         par_deg = p_deg;     // bolt parallelism degree
     }
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
-        LOG.info("[SpikeDetectionBolt] Started ({} replicas).", par_deg);
+        LOG.info("[SpikeDetectorBolt] Started ({} replicas).", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         processed = 0;               // total number of processed tuples
@@ -75,9 +75,9 @@ public class SpikeDetectionBolt extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[SpikeDetectionBolt] Processed {} tuples in {} ms (detected {} spikes). " +
+        LOG.info("[SpikeDetectorBolt] Processed {} tuples in {} ms (detected {} spikes). " +
                         "Source bandwidth is {} tuples per second.",
-                processed, t_elapsed,
+                processed, t_elapsed, spikes,
                 processed / (t_elapsed / 1000));  // tuples per second
     }
 

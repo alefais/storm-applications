@@ -20,6 +20,7 @@ import java.util.Properties;
 
 /**
  * The topology entry class.
+ *
  * @author Alessandra Fais
  */
 public class SpikeDetection {
@@ -33,7 +34,8 @@ public class SpikeDetection {
                     " file path\n" +
                     "Optional arguments:\n" +
                     " source parallelism degree (default 1)\n" +
-                    " bolt parallelism degree (default 1)\n" +
+                    " bolt1 parallelism degree (default 1)\n" +
+                    " bolt2 parallelism degree (default 1)\n" +
                     " sink parallelism degree (default 1)\n" +
                     " source generation rate (default -1, generate at the max possible rate)\n" +
                     " topology name (default SpikeDetection)\n" +
@@ -52,16 +54,24 @@ public class SpikeDetection {
 
             // prepare the topology
             TopologyBuilder builder = new TopologyBuilder();
-            builder.setSpout("spout", new FileParserSpout(file_path, gen_rate, source_par_deg), source_par_deg);
+            builder.setSpout("spout",
+                    new FileParserSpout(file_path, gen_rate, source_par_deg),
+                    source_par_deg);
 
-            builder.setBolt("moving_average", new MovingAverageBolt(bolt1_par_deg), bolt1_par_deg)
+            builder.setBolt("moving_average",
+                    new MovingAverageBolt(bolt1_par_deg),
+                    bolt1_par_deg)
                     .fieldsGrouping("spout", new Fields(Field.DEVICE_ID));
 
-            builder.setBolt("spike_detection", new SpikeDetectionBolt(bolt2_par_deg), bolt2_par_deg)
+            builder.setBolt("spike_detector",
+                    new SpikeDetectorBolt(bolt2_par_deg),
+                    bolt2_par_deg)
                     .shuffleGrouping("moving_average");
 
-            builder.setBolt("sink", new ConsoleSink(sink_par_deg, gen_rate), sink_par_deg)
-                    .shuffleGrouping("spike_detection");
+            builder.setBolt("sink",
+                    new ConsoleSink(sink_par_deg, gen_rate),
+                    sink_par_deg)
+                    .shuffleGrouping("spike_detector");
 
             // prepare the configuration
             Config conf = new Config();

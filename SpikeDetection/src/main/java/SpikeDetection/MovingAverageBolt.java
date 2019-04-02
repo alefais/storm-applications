@@ -19,7 +19,8 @@ import java.util.Map;
 
 /**
  * Calculates the average over a window for distinct elements.
- * http://github.com/surajwaghulde/storm-example-projects
+ *
+ * See http://github.com/surajwaghulde/storm-example-projects
  *
  * @author Alessandra Fais
  */
@@ -63,7 +64,7 @@ public class MovingAverageBolt extends BaseRichBolt {
     public void execute(Tuple tuple) {
         String deviceID = tuple.getStringByField(Field.DEVICE_ID);
         double next_property_value = tuple.getDoubleByField(Field.VALUE);
-        double timestamp = tuple.getLongByField(Field.TIMESTAMP);
+        long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
         double moving_avg_instant = movingAverage(deviceID, next_property_value);
 
@@ -74,9 +75,9 @@ public class MovingAverageBolt extends BaseRichBolt {
                             tuple.getLongByField(BaseConstants.BaseField.MSG_ID),
                             tuple.getLongByField(BaseConstants.BaseField.SYSTEMTIMESTAMP)));
         } else*/
-        collector.emit(tuple, new Values(deviceID, moving_avg_instant, next_property_value, timestamp));
+        collector.emit(new Values(deviceID, moving_avg_instant, next_property_value, timestamp));
 
-        LOG.info("[MovingAverageBolt] Sending: DeviceID {} avg {} next_value {}",
+        LOG.debug("[MovingAverageBolt] Sending: DeviceID {} avg {} next_value {}",
                 deviceID, moving_avg_instant, next_property_value);
 
         processed++;

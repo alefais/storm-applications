@@ -24,7 +24,7 @@ import java.util.Scanner;
  * and generating the stream of records toward the MovingAverageBolt.
  *
  * Format of the input file:
- * date:yyyy-mm-dd	time:hh:mm:ss.xxx	epoch:int	deviceid:int	temperature:real	humidity:real	light:real	voltage:real
+ * date:yyyy-mm-dd	time:hh:mm:ss.xxx	epoch:int	deviceID:int	temperature:real	humidity:real	light:real	voltage:real
  *
  * Data example can be found here: http://db.csail.mit.edu/labdata/labdata.html
  *
@@ -47,8 +47,10 @@ public class FileParserSpout extends BaseRichSpout {
     private static final int LIGHT_FIELD = 6;
     private static final int VOLT_FIELD = 7;
 
-    // maps the property that the user wants to monitor (value from sd.properties:sd.parser.value_field)
-    // to the corresponding field index
+    /*
+        maps the property that the user wants to monitor (value from sd.properties:sd.parser.value_field)
+        to the corresponding field index
+     */
     private static final ImmutableMap<String, Integer> field_list = ImmutableMap.<String, Integer>builder()
             .put("temp", TEMP_FIELD)
             .put("humid", HUMID_FIELD)
@@ -70,14 +72,14 @@ public class FileParserSpout extends BaseRichSpout {
     private int par_deg;
 
     /**
-     * Constructor: it expects the file path and the split expression needed
-     * to parse the file (it depends on the format of the input data)
+     * Constructor: it expects the file path, the generation rate and the parallelism degree.
      * @param file path to the input data file
      * @param gen_rate if the argument value is -1 then the spout generates tuples at
      *                 the maximum rate possible (measure the bandwidth under this assumption);
      *                 if the argument value is different from -1 then the spout generates
      *                 tuples at the rate given by this parameter (measure the latency given
      *                 this generation rate)
+     * @param p_deg source parallelism degree
      */
     FileParserSpout(String file, int gen_rate, int p_deg) {
         file_path = file;
@@ -106,9 +108,8 @@ public class FileParserSpout extends BaseRichSpout {
     /**
      * The method is called in an infinite loop by design, this means that the
      * stream is continuously generated from the data source file.
-     * The parsing phase splits each line of the input dataset in 2 parts:
-     * - first string identifies the customer (entityID)
-     * - second string contains the transactionID and the transaction type
+     * The parsing phase splits each line of the input dataset extracting date and time, deviceID
+     * and information provided by the sensor about temperature, humidity, light and voltage.
      */
     @Override
     public void nextTuple() {
@@ -122,8 +123,7 @@ public class FileParserSpout extends BaseRichSpout {
         ArrayList<Double> light = new ArrayList<>();
         ArrayList<Double> voltage = new ArrayList<>();
 
-        // parsing phase
-        /*
+        /*  example of the result obtained by parsing one line
              0 = "2004-03-31"
              1 = "03:38:15.757551"
              2 = "2"
@@ -133,6 +133,8 @@ public class FileParserSpout extends BaseRichSpout {
              6 = "11.04"
              7 = "2.03397"
          */
+
+        // parsing phase
         try {
             Scanner scan = new Scanner(txt);
             while (scan.hasNextLine()) {
@@ -161,7 +163,7 @@ public class FileParserSpout extends BaseRichSpout {
                             fields[LIGHT_FIELD],
                             fields[VOLT_FIELD]);
                 } else
-                    LOG.info("[FileParserSpout] Incomplete record.");
+                    LOG.debug("[FileParserSpout] Incomplete record.");
             }
             scan.close();
         } catch (FileNotFoundException | NullPointerException e) {

@@ -70,8 +70,6 @@ public class ConsoleSink extends BaseRichBolt {
             tuple_latencies.add(tuple_latency);
         }
 
-        //collector.ack(tuple);
-
         t_end = System.nanoTime();
     }
 
