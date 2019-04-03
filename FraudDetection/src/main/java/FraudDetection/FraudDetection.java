@@ -30,9 +30,9 @@ public class FraudDetection {
     public static void main(String[] args) {
         if (args.length == 0) {
             String alert =
-                    "In order to correctly run FraudDetection app you need to pass the following arguments:\n" +
-                    " file path\n" +
+                    "In order to correctly run FraudDetection app you can to pass the following (optional) arguments:\n" +
                     "Optional arguments:\n" +
+                    " file path (default specified in fd.properties)\n" +
                     " source parallelism degree (default 1)\n" +
                     " bolt parallelism degree (default 1)\n" +
                     " sink parallelism degree (default 1)\n" +
@@ -42,7 +42,7 @@ public class FraudDetection {
             LOG.error(alert);
         } else {
             // parse command line arguments
-            String file_path = args[0];
+            String file_path = (args.length > 0) ? args[0] : null;
             int source_par_deg = (args.length > 1) ? new Integer(args[1]) : 1;
             int bolt_par_deg = (args.length > 2) ? new Integer(args[2]) : 1;
             int sink_par_deg = (args.length > 3) ? new Integer(args[3]) : 1;
@@ -52,13 +52,13 @@ public class FraudDetection {
 
             // prepare the topology
             TopologyBuilder builder = new TopologyBuilder();
-            builder.setSpout("spout", new FileParserSpout(file_path, ",", gen_rate, source_par_deg), source_par_deg);
+            builder.setSpout(Component.SPOUT, new FileParserSpout(file_path, ",", gen_rate, source_par_deg), source_par_deg);
 
-            builder.setBolt("fraud_predictor", new FraudPredictorBolt(bolt_par_deg), bolt_par_deg)
-                    .fieldsGrouping("spout", new Fields(Field.ENTITY_ID));
+            builder.setBolt(Component.PREDICTOR, new FraudPredictorBolt(bolt_par_deg), bolt_par_deg)
+                    .fieldsGrouping(Component.SPOUT, new Fields(Field.ENTITY_ID));
 
-            builder.setBolt("sink", new ConsoleSink(sink_par_deg, gen_rate), sink_par_deg)
-                    .shuffleGrouping("fraud_predictor");
+            builder.setBolt(Component.SINK, new ConsoleSink(sink_par_deg, gen_rate), sink_par_deg)
+                    .shuffleGrouping(Component.PREDICTOR);
 
             // prepare the configuration
             Config conf = new Config();
