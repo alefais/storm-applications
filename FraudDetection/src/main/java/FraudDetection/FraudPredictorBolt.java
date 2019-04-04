@@ -24,8 +24,6 @@ import java.util.Map;
  * Given a transaction sequence of a customer, there is a
  * probability associated with each path of state transition,
  * which indicates the chances of fraudolent activities.
- *
- * @author Alessandra Fais
  */
 public class FraudPredictorBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(FraudPredictorBolt.class);
@@ -59,7 +57,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
 
         String strategy = config.getString(Conf.PREDICTOR_MODEL);
         if (strategy.equals("mm")) {
-            LOG.info("[FraudPredictorBolt] Creating Markov Model Predictor.");
+            LOG.debug("[FraudPredictorBolt] Creating Markov Model Predictor.");
             predictor = new MarkovModelPredictor(config);
         }
     }
@@ -81,7 +79,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
             LOG.debug("[FraudPredictorBolt] Sending outlier: EntityID {} score {} states {}",
                     entityID, p.getScore(), StringUtils.join(p.getStates(), ","));
         }
-        //collector.ack(tuple);
+        collector.ack(tuple);
 
         processed++;
         t_end = System.nanoTime();

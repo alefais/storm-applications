@@ -22,8 +22,6 @@ import java.util.Properties;
 
 /**
  * The topology entry class.
- *
- * @author Alessandra Fais
  */
 public class FraudDetection {
 
@@ -52,7 +50,7 @@ public class FraudDetection {
                 Properties p = loadProperties(cfg);
 
                 conf = Configuration.fromProperties(p);
-                LOG.info("Loaded configuration file {}.", cfg);
+                LOG.debug("Loaded configuration file {}.", cfg);
             } catch (IOException e) {
                 LOG.error("Unable to load configuration file.", e);
                 throw new RuntimeException("Unable to load configuration file.", e);
@@ -77,9 +75,6 @@ public class FraudDetection {
 
             String topology_name = (args.length > 5) ? args[5] : FraudDetectionConstants.DEFAULT_TOPO_NAME;
             String ex_mode = (args.length > 6) ? args[6] : BaseConstants.LOCAL_MODE;
-
-            LOG.info("Parameters values: {}\n{}\n{}\n{}\n{}\n{}\n{}\n",
-                    file_path, source_par_deg, bolt_par_deg, sink_par_deg, gen_rate, topology_name, ex_mode);
 
             // prepare the topology
             TopologyBuilder builder = new TopologyBuilder();
@@ -160,7 +155,7 @@ public class FraudDetection {
             properties.load(is);
             is.close();
         }
-        LOG.info("[main] Properties loaded: {}.", properties.toString());
+        LOG.debug("[main] Properties loaded: {}.", properties.toString());
         return properties;
     }
 }

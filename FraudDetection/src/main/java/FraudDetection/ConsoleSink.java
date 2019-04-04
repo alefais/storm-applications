@@ -17,8 +17,6 @@ import java.util.Map;
 
 /**
  * The sink is in charge of printing the results.
- *
- * @author Alessandra Fais
  */
 public class ConsoleSink extends BaseRichBolt {
 
@@ -61,7 +59,6 @@ public class ConsoleSink extends BaseRichBolt {
         String states = tuple.getStringByField(Field.STATES);
         Long timestamp = tuple.getLongByField(BaseField.TIMESTAMP);
 
-        processed++;
         LOG.debug("[ConsoleSink] EntityID {}, score {}, states {}.", entityID, score, states);
 
         if (gen_rate != -1) {   // evaluate latency
@@ -69,9 +66,9 @@ public class ConsoleSink extends BaseRichBolt {
             Long tuple_latency = (now - timestamp); // tuple latency in nanoseconds
             tuple_latencies.add(tuple_latency);
         }
+        collector.ack(tuple);
 
-        //collector.ack(tuple);
-
+        processed++;
         t_end = System.nanoTime();
     }
 
@@ -83,7 +80,7 @@ public class ConsoleSink extends BaseRichBolt {
             if (gen_rate == -1) {  // evaluate bandwidth
                 long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-                LOG.info("[ConsoleSink] Processed {} tuples (outliers) in {} ms. " +
+                LOG.debug("[ConsoleSink] Processed {} tuples (outliers) in {} ms. " +
                                 "Bandwidth is {} tuples per second.",
                         processed, t_elapsed,
                         processed / (t_elapsed / 1000));  // tuples per second
@@ -93,6 +90,7 @@ public class ConsoleSink extends BaseRichBolt {
                     acc += tl;
                 }
                 double avg_latency = (double) acc / tuple_latencies.size(); // average latency in nanoseconds
+
                 LOG.info("[ConsoleSink] Processed tuples: {}. Timestamps registered: {}.", processed, tuple_latencies.size());
                 LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
             }
