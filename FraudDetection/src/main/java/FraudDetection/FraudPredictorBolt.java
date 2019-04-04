@@ -1,6 +1,5 @@
 package FraudDetection;
 
-import Constants.BaseConstants.BaseField;
 import Constants.FraudDetectionConstants.*;
 import MarkovModelPrediction.MarkovModelPredictor;
 import MarkovModelPrediction.ModelBasedPredictor;
@@ -66,7 +65,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
     public void execute(Tuple tuple) {
         String entityID = tuple.getStringByField(Field.ENTITY_ID);
         String record = tuple.getStringByField(Field.RECORD_DATA);
-        Long timestamp = tuple.getLongByField(BaseField.TIMESTAMP);
+        Long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
         Prediction p = predictor.execute(entityID, record);
 
@@ -97,7 +96,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.SCORE, Field.STATES, BaseField.TIMESTAMP));
+        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.SCORE, Field.STATES, Field.TIMESTAMP));
     }
 }
 

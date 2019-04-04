@@ -27,7 +27,7 @@ public interface FraudDetectionConstants extends BaseConstants {
         String PREDICTOR = "fraud_predictor";
     }
     
-    interface Field {
+    interface Field extends BaseField {
         String ENTITY_ID = "entityID";
         String RECORD_DATA = "recordData";
         String SCORE = "score";
