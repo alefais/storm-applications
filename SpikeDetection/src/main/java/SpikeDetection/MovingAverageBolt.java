@@ -1,6 +1,5 @@
 package SpikeDetection;
 
-import Constants.BaseConstants;
 import Constants.SpikeDetectionConstants.*;
 import Util.config.Configuration;
 import org.apache.storm.task.OutputCollector;
@@ -21,8 +20,6 @@ import java.util.Map;
  * Calculates the average over a window for distinct elements.
  *
  * See http://github.com/surajwaghulde/storm-example-projects
- *
- * @author Alessandra Fais
  */
 public class MovingAverageBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MovingAverageBolt.class);
@@ -68,14 +65,8 @@ public class MovingAverageBolt extends BaseRichBolt {
 
         double moving_avg_instant = movingAverage(deviceID, next_property_value);
 
-        /*if (tuple.getSourceStreamId().equalsIgnoreCase(BaseConstants.BaseStream.Marker_STREAM_ID)) {
-            collector.emit(
-                    BaseConstants.BaseStream.Marker_STREAM_ID,
-                    new Values(deviceID, moving_avg_instant, next_property_value, "spike detected",
-                            tuple.getLongByField(BaseConstants.BaseField.MSG_ID),
-                            tuple.getLongByField(BaseConstants.BaseField.SYSTEMTIMESTAMP)));
-        } else*/
-        collector.emit(new Values(deviceID, moving_avg_instant, next_property_value, timestamp));
+        collector.emit(tuple, new Values(deviceID, moving_avg_instant, next_property_value, timestamp));
+        collector.ack(tuple);
 
         LOG.debug("[MovingAverageBolt] Sending: DeviceID {} avg {} next_value {}",
                 deviceID, moving_avg_instant, next_property_value);

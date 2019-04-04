@@ -27,8 +27,6 @@ import java.util.Scanner;
  * date:yyyy-mm-dd	time:hh:mm:ss.xxx	epoch:int	deviceID:int	temperature:real	humidity:real	light:real	voltage:real
  *
  * Data example can be found here: http://db.csail.mit.edu/labdata/labdata.html
- *
- * @author Alessandra Fais
  */
 public class FileParserSpout extends BaseRichSpout {
 
@@ -47,10 +45,8 @@ public class FileParserSpout extends BaseRichSpout {
     private static final int LIGHT_FIELD = 6;
     private static final int VOLT_FIELD = 7;
 
-    /*
-        maps the property that the user wants to monitor (value from sd.properties:sd.parser.value_field)
-        to the corresponding field index
-     */
+    // maps the property that the user wants to monitor (value from sd.properties:sd.parser.value_field)
+    // to the corresponding field index
     private static final ImmutableMap<String, Integer> field_list = ImmutableMap.<String, Integer>builder()
             .put("temp", TEMP_FIELD)
             .put("humid", HUMID_FIELD)
@@ -191,13 +187,9 @@ public class FileParserSpout extends BaseRichSpout {
             } else {                // at the given rate
                 long t_now = System.nanoTime();
                 if (emitted >= rate) {
-                    LOG.info("[FileParserSpout] emitted {} VS rate {} in {} ms (delay: {} ns)",
-                            emitted, rate, (t_now - t_init) / 1000000, (double)interval / rate);
-
-                    if (t_now - t_init <= interval) {
-                        LOG.info("[FileParserSpout] waste {} ns.", interval - (t_now - t_init));
+                    if (t_now - t_init <= interval)
                         active_delay(interval - (t_now - t_init));
-                    }
+
                     emitted = 0;
                     t_init = System.nanoTime();
                     reset++;

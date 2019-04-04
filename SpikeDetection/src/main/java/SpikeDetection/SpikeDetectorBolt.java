@@ -1,7 +1,7 @@
 package SpikeDetection;
 
+import Constants.SpikeDetectionConstants;
 import Constants.SpikeDetectionConstants.*;
-import Constants.BaseConstants.*;
 import Util.config.Configuration;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -14,6 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Map;
 
+/**
+ * Detects spikes in the measurements received by sensors
+ * using a properly defined threshold.
+ */
 public class SpikeDetectorBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MovingAverageBolt.class);
 
@@ -44,8 +48,7 @@ public class SpikeDetectorBolt extends BaseRichBolt {
         context = topologyContext;
         collector = outputCollector;
 
-        // the detection threshold of moving average values is set to 0.03.
-        spike_threshold = config.getDouble(Conf.SPIKE_DETECTOR_THRESHOLD, 0.03d);
+        spike_threshold = config.getDouble(Conf.SPIKE_DETECTOR_THRESHOLD, SpikeDetectionConstants.DEFAULT_THRESHOLD);
     }
 
     @Override
@@ -56,16 +59,10 @@ public class SpikeDetectorBolt extends BaseRichBolt {
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
         if (Math.abs(next_property_value - moving_avg_instant) > spike_threshold * moving_avg_instant) {
-            /*if (tuple.getSourceStreamId().equalsIgnoreCase(BaseStream.Marker_STREAM_ID)) {
-                collector.emit(
-                        BaseStream.Marker_STREAM_ID,
-                        new Values(deviceID, moving_avg_instant, next_property_value, "spike detected",
-                                tuple.getLongByField(BaseField.MSG_ID),
-                                tuple.getLongByField(BaseField.SYSTEMTIMESTAMP)));
-            }*/
             spikes++;
-            collector.emit(new Values(deviceID, moving_avg_instant, next_property_value, timestamp));
+            collector.emit(tuple, new Values(deviceID, moving_avg_instant, next_property_value, timestamp));
         }
+        collector.ack(tuple);
 
         processed++;
         t_end = System.nanoTime();

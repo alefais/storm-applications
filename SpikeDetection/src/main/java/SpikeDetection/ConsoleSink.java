@@ -16,8 +16,6 @@ import java.util.Map;
 
 /**
  * The sink is in charge of printing the results.
- *
- * @author Alessandra Fais
  */
 public class ConsoleSink extends BaseRichBolt {
 
@@ -60,7 +58,6 @@ public class ConsoleSink extends BaseRichBolt {
         double next_property_value = tuple.getDoubleByField(Field.VALUE);
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
-        processed++;
         LOG.debug("[ConsoleSink] DeviceID {}, moving_avg {}, next {}.",
                 deviceID, moving_avg_instant, next_property_value);
 
@@ -69,7 +66,9 @@ public class ConsoleSink extends BaseRichBolt {
             long tuple_latency = (now - timestamp); // tuple latency in nanoseconds
             tuple_latencies.add(tuple_latency);
         }
+        collector.ack(tuple);
 
+        processed++;
         t_end = System.nanoTime();
     }
 
@@ -91,6 +90,7 @@ public class ConsoleSink extends BaseRichBolt {
                     acc += tl;
                 }
                 double avg_latency = (double) acc / tuple_latencies.size(); // average latency in nanoseconds
+
                 LOG.info("[ConsoleSink] Processed tuples: {}. Timestamps registered: {}.", processed, tuple_latencies.size());
                 LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
             }

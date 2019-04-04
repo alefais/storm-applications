@@ -1,6 +1,9 @@
 package SpikeDetection;
 
-import Constants.SpikeDetectionConstants.Field;
+import Constants.BaseConstants;
+import Constants.SpikeDetectionConstants;
+import Constants.BaseConstants.*;
+import Constants.SpikeDetectionConstants.*;
 import Util.config.Configuration;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
@@ -20,83 +23,93 @@ import java.util.Properties;
 
 /**
  * The topology entry class.
- *
- * @author Alessandra Fais
  */
 public class SpikeDetection {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileParserSpout.class);
 
     public static void main(String[] args) {
-        if (args.length == 0) {
+        if (args.length == 1 && args[0].equals(BaseConstants.HELP)) {
             String alert =
-                    "In order to correctly run SpikeDetection app you need to pass the following arguments:\n" +
+                    "In order to correctly run FraudDetection app you can pass the following (optional) arguments:\n" +
+                    "Optional arguments (default values are specified in fd.properties or defined as constants):\n" +
                     " file path\n" +
-                    "Optional arguments:\n" +
-                    " source parallelism degree (default 1)\n" +
-                    " bolt1 parallelism degree (default 1)\n" +
-                    " bolt2 parallelism degree (default 1)\n" +
-                    " sink parallelism degree (default 1)\n" +
+                    " source parallelism degree\n" +
+                    " moving average bolt parallelism degree\n" +
+                    " spike detector bolt parallelism degree\n" +
+                    " sink parallelism degree\n" +
                     " source generation rate (default -1, generate at the max possible rate)\n" +
-                    " topology name (default SpikeDetection)\n" +
+                    " topology name (default FraudDetection)\n" +
                     " execution mode (default local)";
             LOG.error(alert);
         } else {
-            // parse command line arguments
-            String file_path = args[0];
-            int source_par_deg = (args.length > 1) ? new Integer(args[1]) : 1;
-            int bolt1_par_deg = (args.length > 2) ? new Integer(args[2]) : 1;
-            int bolt2_par_deg = (args.length > 3) ? new Integer(args[3]) : 1;
-            int sink_par_deg = (args.length > 4) ? new Integer(args[4]) : 1;
-            int gen_rate = (args.length > 5) ? new Integer(args[5]) : -1;
-            String topology_name = (args.length > 6) ? args[6] : "SpikeDetection";
-            String ex_mode = (args.length > 7) ? args[7] : "local";
-
-            // prepare the topology
-            TopologyBuilder builder = new TopologyBuilder();
-            builder.setSpout("spout",
-                    new FileParserSpout(file_path, gen_rate, source_par_deg),
-                    source_par_deg);
-
-            builder.setBolt("moving_average",
-                    new MovingAverageBolt(bolt1_par_deg),
-                    bolt1_par_deg)
-                    .fieldsGrouping("spout", new Fields(Field.DEVICE_ID));
-
-            builder.setBolt("spike_detector",
-                    new SpikeDetectorBolt(bolt2_par_deg),
-                    bolt2_par_deg)
-                    .shuffleGrouping("moving_average");
-
-            builder.setBolt("sink",
-                    new ConsoleSink(sink_par_deg, gen_rate),
-                    sink_par_deg)
-                    .shuffleGrouping("spike_detector");
-
-            // prepare the configuration
+            // load default configuration
             Config conf = new Config();
             conf.setDebug(false);
             conf.setNumWorkers(1);
             try {
-                // load configuration
-                String cfg = "/spikedetection/sd.properties";
+                String cfg = SpikeDetectionConstants.DEFAULT_PROPERTIES;
                 Properties p = loadProperties(cfg);
 
                 conf = Configuration.fromProperties(p);
-                LOG.info("Loaded configuration file {}.", cfg);
+                LOG.debug("Loaded configuration file {}.", cfg);
             } catch (IOException e) {
                 LOG.error("Unable to load configuration file.", e);
                 throw new RuntimeException("Unable to load configuration file.", e);
             }
+
+            // parse command line arguments
+            String file_path = (args.length > 0) ?
+                    args[0] :
+                    ((Configuration) conf).getString(Conf.SPOUT_PATH);
+            int source_par_deg = (args.length > 1) ?
+                    new Integer(args[1]) :
+                    ((Configuration) conf).getInt(Conf.SPOUT_THREADS);
+            int bolt1_par_deg = (args.length > 2) ?
+                    new Integer(args[2]) :
+                    ((Configuration) conf).getInt(Conf.MOVING_AVERAGE_THREADS);
+            int bolt2_par_deg = (args.length > 3) ?
+                    new Integer(args[3]) :
+                    ((Configuration) conf).getInt(Conf.SPIKE_DETECTOR_THREADS);
+            int sink_par_deg = (args.length > 4) ?
+                    new Integer(args[4]) :
+                    ((Configuration) conf).getInt(Conf.SINK_THREADS);
+
+            // source generation rate (for tests)
+            int gen_rate = (args.length > 5) ? new Integer(args[5]) : Execution.DEFAULT_RATE;
+
+            String topology_name = (args.length > 6) ? args[6] : SpikeDetectionConstants.DEFAULT_TOPO_NAME;
+            String ex_mode = (args.length > 7) ? args[7] : Execution.LOCAL_MODE;
+
+            // prepare the topology
+            TopologyBuilder builder = new TopologyBuilder();
+            builder.setSpout(Component.SPOUT,
+                    new FileParserSpout(file_path, gen_rate, source_par_deg),
+                    source_par_deg);
+
+            builder.setBolt(Component.MOVING_AVERAGE,
+                    new MovingAverageBolt(bolt1_par_deg),
+                    bolt1_par_deg)
+                    .fieldsGrouping(Component.SPOUT, new Fields(Field.DEVICE_ID));
+
+            builder.setBolt(Component.SPIKE_DETECTOR,
+                    new SpikeDetectorBolt(bolt2_par_deg),
+                    bolt2_par_deg)
+                    .shuffleGrouping(Component.MOVING_AVERAGE);
+
+            builder.setBolt(Component.SINK,
+                    new ConsoleSink(sink_par_deg, gen_rate),
+                    sink_par_deg)
+                    .shuffleGrouping(Component.SPIKE_DETECTOR);
 
             // build the topology
             StormTopology topology = builder.createTopology();
 
             // run the topology
             try {
-                if (ex_mode.equals("local"))
-                    runTopologyLocally(topology, topology_name, conf, 120); // 2 minutes
-                else if (ex_mode.equals("remote"))
+                if (ex_mode.equals(Execution.LOCAL_MODE))
+                    runTopologyLocally(topology, topology_name, conf, Execution.RUNTIME_SEC);
+                else if (ex_mode.equals(Execution.REMOTE_MODE))
                     runTopologyRemotely(topology, topology_name, conf);
             } catch (InterruptedException e) {
                 LOG.error("Error in running topology locally.", e);
