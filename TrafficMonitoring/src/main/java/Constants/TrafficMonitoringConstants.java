@@ -38,8 +38,13 @@ public interface TrafficMonitoringConstants extends BaseConstants {
         String LATITUDE = "latitude";
         String LONGITUDE = "longitude";
         String ROAD_ID = "roadID";
-        String NOW_DAT = "nowDate";
+        String NOW_DATE = "nowDate";
         String AVG_SPEED = "averageSpeed";
         String COUNT = "count";
+    }
+
+    interface City {
+        String BEIJING = "beijing";
+        String DUBLIN = "dublin";
     }
 }

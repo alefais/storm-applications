@@ -1,5 +1,6 @@
 package TrafficMonitoring;
 
+import Constants.TrafficMonitoringConstants;
 import Constants.TrafficMonitoringConstants.*;
 import Util.config.Configuration;
 import com.google.common.collect.ImmutableMap;
@@ -60,8 +61,8 @@ public class FileParserSpout extends BaseRichSpout {
 
     private String file_path;
     private Integer rate;
-    private String value_field;
-    private int value_field_key;
+    private String city;
+    private String city_shapefile;
 
     private long t_start;
     private long generated;
@@ -101,8 +102,10 @@ public class FileParserSpout extends BaseRichSpout {
         collector = spoutOutputCollector;
         context = topologyContext;
 
-        value_field = config.getString(Conf.PARSER_VALUE_FIELD);
-        value_field_key = field_list.get(value_field);
+        city = config.getString(Conf.MAP_MATCHER_SHAPEFILE);
+        city_shapefile = (city.equals(City.DUBLIN)) ?
+                TrafficMonitoringConstants.DUBLIN_SHAPEFILE :
+                TrafficMonitoringConstants.BEIJING_SHAPEFILE;
     }
 
     /**
@@ -113,6 +116,13 @@ public class FileParserSpout extends BaseRichSpout {
      */
     @Override
     public void nextTuple() {
+        if (city.equals(City.DUBLIN))
+            parseDublinBusTrace();
+        else
+            parseBeijingTaxiTrace();
+    }
+
+    private void oldMethod() {
         File txt = new File(file_path);
         ArrayList<String> date = new ArrayList<>();
         ArrayList<String> time = new ArrayList<>();
@@ -226,10 +236,29 @@ public class FileParserSpout extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields(Field.DEVICE_ID, Field.VALUE, Field.TIMESTAMP));
+        outputFieldsDeclarer.declare(
+                new Fields(
+                        Field.VEHICLE_ID,
+                        Field.DATE_TIME,
+                        Field.OCCUPIED,
+                        Field.SPEED,
+                        Field.BEARING,
+                        Field.LATITUDE,
+                        Field.LONGITUDE,
+                        Field.TIMESTAMP
+                )
+        );
     }
 
     //------------------------------ private methods ---------------------------
+
+    private void parseBeijingTaxiTrace() {
+
+    }
+
+    private void parseDublinBusTrace() {
+
+    }
 
     /**
      * Add some active delay (busy-waiting function).

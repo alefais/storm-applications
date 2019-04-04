@@ -10,6 +10,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +19,11 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This operator receives traces of an object (e.g. GPS loggers and GPS phones)
+ * including altitude, latitude and longitude, and uses them to determine the
+ * location (regarding a road ID) of this object in real-time.
+ */
 public class MapMatchingBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MapMatchingBolt.class);
 
@@ -71,6 +77,9 @@ public class MapMatchingBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         try {
+            String vehicleID = tuple.getStringByField(Field.VEHICLE_ID);
+            String date_time = tuple.getStringByField(Field.DATE_TIME);
+            boolean occ = tuple.getBooleanByField(Field.OCCUPIED);
             int speed = tuple.getIntegerByField(Field.SPEED);
             int bearing = tuple.getIntegerByField(Field.BEARING);
             double latitude = tuple.getDoubleByField(Field.LATITUDE);
@@ -85,10 +94,22 @@ public class MapMatchingBolt extends BaseRichBolt {
             int roadID = sectors.fetchRoadID(record);
 
             if (roadID != -1) {
-                List<Object> values = tuple.getValues();
-                values.add(roadID);
+                //List<Object> values = tuple.getValues();
+                //values.add(roadID);
 
-                collector.emit(tuple, values);
+                collector.emit(tuple,
+                        new Values(
+                                vehicleID,
+                                date_time,
+                                occ,
+                                speed,
+                                bearing,
+                                latitude,
+                                longitude,
+                                roadID,
+                                timestamp
+                        )
+                );
             }
             collector.ack(tuple);
 

@@ -55,7 +55,6 @@ public class ConsoleSink extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-
         int roadID = tuple.getIntegerByField(Field.ROAD_ID);
         int avg_speed = tuple.getIntegerByField(Field.AVG_SPEED);
         int count = tuple.getIntegerByField(Field.COUNT);
@@ -66,7 +65,6 @@ public class ConsoleSink extends BaseRichBolt {
             Long tuple_latency = (now - timestamp); // tuple latency in nanoseconds
             tuple_latencies.add(tuple_latency);
         }
-
         collector.ack(tuple);
 
         processed++;
@@ -105,7 +103,8 @@ public class ConsoleSink extends BaseRichBolt {
                         Field.ROAD_ID,
                         Field.AVG_SPEED,
                         Field.COUNT,
-                        Field.TIMESTAMP)
+                        Field.TIMESTAMP
+                )
         );
     }
 }
