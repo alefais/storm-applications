@@ -1,6 +1,6 @@
 package FraudDetection;
 
-import Constants.BaseConstants.*;
+import Constants.BaseConstants.BaseField;
 import Constants.FraudDetectionConstants.Field;
 import Util.config.Configuration;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -80,9 +80,6 @@ public class FileParserSpout extends BaseRichSpout {
         config = Configuration.fromMap(conf);
         collector = spoutOutputCollector;
         context = topologyContext;
-
-        if (file_path == null)
-            file_path = config.getString(BaseConf.SPOUT_PATH);
     }
 
     /**

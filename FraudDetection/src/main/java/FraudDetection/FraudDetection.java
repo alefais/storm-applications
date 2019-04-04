@@ -1,5 +1,7 @@
 package FraudDetection;
 
+import Constants.BaseConstants;
+import Constants.FraudDetectionConstants;
 import Constants.FraudDetectionConstants.*;
 import Util.config.Configuration;
 import org.apache.storm.Config;
@@ -28,27 +30,56 @@ public class FraudDetection {
     private static final Logger LOG = LoggerFactory.getLogger(FileParserSpout.class);
 
     public static void main(String[] args) {
-        if (args.length == 0) {
+        if (args.length == 1 && args[0].equals(BaseConstants.HELP)) {
             String alert =
-                    "In order to correctly run FraudDetection app you can to pass the following (optional) arguments:\n" +
-                    "Optional arguments:\n" +
-                    " file path (default specified in fd.properties)\n" +
-                    " source parallelism degree (default 1)\n" +
-                    " bolt parallelism degree (default 1)\n" +
-                    " sink parallelism degree (default 1)\n" +
+                    "In order to correctly run FraudDetection app you can pass the following (optional) arguments:\n" +
+                    "Optional arguments (default values are specified in fd.properties or defined as constants):\n" +
+                    " file path\n" +
+                    " source parallelism degree\n" +
+                    " bolt parallelism degree\n" +
+                    " sink parallelism degree\n" +
                     " source generation rate (default -1, generate at the max possible rate)\n" +
                     " topology name (default FraudDetection)\n" +
                     " execution mode (default local)";
             LOG.error(alert);
         } else {
+            // load default configuration
+            Config conf = new Config();
+            conf.setDebug(false);
+            conf.setNumWorkers(1);
+            try {
+                String cfg = FraudDetectionConstants.DEFAULT_PROPERTIES;
+                Properties p = loadProperties(cfg);
+
+                conf = Configuration.fromProperties(p);
+                LOG.info("Loaded configuration file {}.", cfg);
+            } catch (IOException e) {
+                LOG.error("Unable to load configuration file.", e);
+                throw new RuntimeException("Unable to load configuration file.", e);
+            }
+
             // parse command line arguments
-            String file_path = (args.length > 0) ? args[0] : null;
-            int source_par_deg = (args.length > 1) ? new Integer(args[1]) : 1;
-            int bolt_par_deg = (args.length > 2) ? new Integer(args[2]) : 1;
-            int sink_par_deg = (args.length > 3) ? new Integer(args[3]) : 1;
-            int gen_rate = (args.length > 4) ? new Integer(args[4]) : -1;
-            String topology_name = (args.length > 5) ? args[5] : "FraudDetection";
-            String ex_mode = (args.length > 6) ? args[6] : "local";
+            String file_path = (args.length > 0) ?
+                    args[0] :
+                    ((Configuration) conf).getString(Conf.SPOUT_PATH);
+            int source_par_deg = (args.length > 1) ?
+                    new Integer(args[1]) :
+                    ((Configuration) conf).getInt(Conf.SPOUT_THREADS);
+            int bolt_par_deg = (args.length > 2) ?
+                    new Integer(args[2]) :
+                    ((Configuration) conf).getInt(Conf.PREDICTOR_THREADS);
+            int sink_par_deg = (args.length > 3) ?
+                    new Integer(args[3]) :
+                    ((Configuration) conf).getInt(Conf.SINK_THREADS);
+
+            // source generation rate (for tests)
+            int gen_rate = (args.length > 4) ? new Integer(args[4]) : BaseConstants.DEFAULT_RATE;
+
+            String topology_name = (args.length > 5) ? args[5] : FraudDetectionConstants.DEFAULT_TOPO_NAME;
+            String ex_mode = (args.length > 6) ? args[6] : BaseConstants.LOCAL_MODE;
+
+            LOG.info("Parameters values: {}\n{}\n{}\n{}\n{}\n{}\n{}\n",
+                    file_path, source_par_deg, bolt_par_deg, sink_par_deg, gen_rate, topology_name, ex_mode);
 
             // prepare the topology
             TopologyBuilder builder = new TopologyBuilder();
@@ -60,30 +91,14 @@ public class FraudDetection {
             builder.setBolt(Component.SINK, new ConsoleSink(sink_par_deg, gen_rate), sink_par_deg)
                     .shuffleGrouping(Component.PREDICTOR);
 
-            // prepare the configuration
-            Config conf = new Config();
-            conf.setDebug(false);
-            conf.setNumWorkers(1);
-            try {
-                // load configuration
-                String cfg = "/frauddetection/fd.properties";
-                Properties p = loadProperties(cfg);
-
-                conf = Configuration.fromProperties(p);
-                LOG.info("Loaded configuration file {}.", cfg);
-            } catch (IOException e) {
-                LOG.error("Unable to load configuration file.", e);
-                throw new RuntimeException("Unable to load configuration file.", e);
-            }
-
             // build the topology
             StormTopology topology = builder.createTopology();
 
             // run the topology
             try {
-                if (ex_mode.equals("local"))
+                if (ex_mode.equals(BaseConstants.LOCAL_MODE))
                     runTopologyLocally(topology, topology_name, conf, 120); // 2 minutes
-                else if (ex_mode.equals("remote"))
+                else if (ex_mode.equals(BaseConstants.REMOTE_MODE))
                     runTopologyRemotely(topology, topology_name, conf);
             } catch (InterruptedException e) {
                 LOG.error("Error in running topology locally.", e);

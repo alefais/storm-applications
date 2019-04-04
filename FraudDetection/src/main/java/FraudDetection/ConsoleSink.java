@@ -1,5 +1,6 @@
 package FraudDetection;
 
+import Constants.BaseConstants.BaseField;
 import Constants.FraudDetectionConstants.Field;
 import Util.config.Configuration;
 import org.apache.storm.task.OutputCollector;
@@ -58,7 +59,7 @@ public class ConsoleSink extends BaseRichBolt {
         String entityID = tuple.getStringByField(Field.ENTITY_ID);
         Double score = tuple.getDoubleByField(Field.SCORE);
         String states = tuple.getStringByField(Field.STATES);
-        Long timestamp = tuple.getLongByField(Field.TIMESTAMP);
+        Long timestamp = tuple.getLongByField(BaseField.TIMESTAMP);
 
         processed++;
         LOG.debug("[ConsoleSink] EntityID {}, score {}, states {}.", entityID, score, states);
@@ -100,6 +101,6 @@ public class ConsoleSink extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.SCORE, Field.STATES, Field.TIMESTAMP));
+        outputFieldsDeclarer.declare(new Fields(Field.ENTITY_ID, Field.SCORE, Field.STATES, BaseField.TIMESTAMP));
     }
 }

@@ -1,12 +1,13 @@
 package Constants;
 
+/**
+ * Constants useful for all the applications.
+ */
 public interface BaseConstants {
-
-    interface BaseConf {
-        String SPOUT_THREADS = "%s.spout.threads";
-        String SPOUT_PATH = "%s.spout.path";
-        String SINK_THREADS = "%s.sink.threads";
-    }
+    String LOCAL_MODE = "local";
+    String REMOTE_MODE = "remote";
+    int DEFAULT_RATE = -1;
+    String HELP = "help";
 
     interface BaseComponent {
         String SPOUT = "spout";
