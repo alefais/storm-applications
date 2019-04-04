@@ -42,8 +42,4 @@ public interface TrafficMonitoringConstants extends BaseConstants {
         String AVG_SPEED = "averageSpeed";
         String COUNT = "count";
     }
-
-    interface City {
-        String BEIJING =
-    }
 }
