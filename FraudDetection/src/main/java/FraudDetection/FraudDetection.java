@@ -2,6 +2,7 @@ package FraudDetection;
 
 import Constants.BaseConstants;
 import Constants.FraudDetectionConstants;
+import Constants.BaseConstants.*;
 import Constants.FraudDetectionConstants.*;
 import Util.config.Configuration;
 import org.apache.storm.Config;
@@ -71,10 +72,10 @@ public class FraudDetection {
                     ((Configuration) conf).getInt(Conf.SINK_THREADS);
 
             // source generation rate (for tests)
-            int gen_rate = (args.length > 4) ? new Integer(args[4]) : BaseConstants.DEFAULT_RATE;
+            int gen_rate = (args.length > 4) ? new Integer(args[4]) : Execution.DEFAULT_RATE;
 
             String topology_name = (args.length > 5) ? args[5] : FraudDetectionConstants.DEFAULT_TOPO_NAME;
-            String ex_mode = (args.length > 6) ? args[6] : BaseConstants.LOCAL_MODE;
+            String ex_mode = (args.length > 6) ? args[6] : Execution.LOCAL_MODE;
 
             // prepare the topology
             TopologyBuilder builder = new TopologyBuilder();
@@ -91,9 +92,9 @@ public class FraudDetection {
 
             // run the topology
             try {
-                if (ex_mode.equals(BaseConstants.LOCAL_MODE))
-                    runTopologyLocally(topology, topology_name, conf, 120); // 2 minutes
-                else if (ex_mode.equals(BaseConstants.REMOTE_MODE))
+                if (ex_mode.equals(Execution.LOCAL_MODE))
+                    runTopologyLocally(topology, topology_name, conf, Execution.RUNTIME_SEC);
+                else if (ex_mode.equals(Execution.REMOTE_MODE))
                     runTopologyRemotely(topology, topology_name, conf);
             } catch (InterruptedException e) {
                 LOG.error("Error in running topology locally.", e);
