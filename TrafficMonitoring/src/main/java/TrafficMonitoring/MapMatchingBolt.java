@@ -21,9 +21,10 @@ import java.sql.SQLException;
 import java.util.Map;
 
 /**
- * This operator receives traces of an object (e.g. GPS loggers and GPS phones)
- * including altitude, latitude and longitude, and uses them to determine the
- * location (regarding a road ID) of this object in real-time.
+ * This operator receives traces of the vehicles (e.g. through GPS loggers
+ * and GPS phones) including latitude, longitude, and other data. These
+ * values are used to determine the location (regarding a road ID) of
+ * the vehicle in real-time.
  */
 public class MapMatchingBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MapMatchingBolt.class);
@@ -61,19 +62,9 @@ public class MapMatchingBolt extends BaseRichBolt {
         collector = outputCollector;
 
         // set city shape file path
-        if (city.equals(City.DUBLIN)) {
-            city_shapefile = TrafficMonitoringConstants.DUBLIN_SHAPEFILE;
-            /*latMin = config.getDouble(Conf.MAP_MATCHER_LAT_MIN_DUBLIN);
-            latMax = config.getDouble(Conf.MAP_MATCHER_LAT_MAX_DUBLIN);
-            lonMin = config.getDouble(Conf.MAP_MATCHER_LON_MIN_DUBLIN);
-            lonMax = config.getDouble(Conf.MAP_MATCHER_LON_MAX_DUBLIN);*/
-        } else {
-            city_shapefile = TrafficMonitoringConstants.BEIJING_SHAPEFILE;
-            /*latMin = config.getDouble(Conf.MAP_MATCHER_LAT_MIN_BEIJING);
-            latMax = config.getDouble(Conf.MAP_MATCHER_LAT_MAX_BEIJING);
-            lonMin = config.getDouble(Conf.MAP_MATCHER_LON_MIN_BEIJING);
-            lonMax = config.getDouble(Conf.MAP_MATCHER_LON_MAX_BEIJING);*/
-        }
+        city_shapefile = (city.equals(City.DUBLIN)) ?
+            TrafficMonitoringConstants.DUBLIN_SHAPEFILE :
+            TrafficMonitoringConstants.BEIJING_SHAPEFILE;
 
         try {
             sectors = new RoadGridList(config, city_shapefile);
