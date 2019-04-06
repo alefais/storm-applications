@@ -16,8 +16,6 @@ import java.util.Map;
 
 /**
  * The sink is in charge of printing the results.
- *
- * @author Alessandra Fais
  */
 public class ConsoleSink extends BaseRichBolt {
 
