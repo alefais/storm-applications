@@ -32,8 +32,8 @@ public class TrafficMonitoring {
         if (args.length == 1 && args[0].equals(BaseConstants.HELP)) {
             String alert =
                     "In order to correctly run FraudDetection app you can pass the following (optional) arguments:\n" +
-                    "Optional arguments (default values are specified in fd.properties or defined as constants):\n" +
-                    " file path\n" +
+                    "Optional arguments (default values are specified in tm.properties or defined as constants):\n" +
+                    " city (accepted values {beijing, dublin})\n" +
                     " source parallelism degree\n" +
                     " map matching bolt parallelism degree\n" +
                     " speed calculator bolt parallelism degree\n" +
@@ -59,9 +59,9 @@ public class TrafficMonitoring {
             }
 
             // parse command line arguments
-            String city = (args.length > 0) ?
+            String city = (args.length > 0 && (args[0].equals(City.BEIJING) || args[0].equals(City.DUBLIN))) ?
                     args[0] :
-                    ((Configuration) conf).getString(Conf.MAP_MATCHER_SHAPEFILE);
+                    ((Configuration) conf).getString(Conf.MAP_MATCHER_SHAPEFILE); // take default value from properties file
             int source_par_deg = (args.length > 1) ?
                     new Integer(args[1]) :
                     ((Configuration) conf).getInt(Conf.SPOUT_THREADS);
