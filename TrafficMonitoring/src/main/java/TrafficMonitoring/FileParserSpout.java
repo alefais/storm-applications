@@ -1,9 +1,7 @@
 package TrafficMonitoring;
 
-import Constants.TrafficMonitoringConstants;
 import Constants.TrafficMonitoringConstants.*;
 import Util.config.Configuration;
-import com.google.common.collect.ImmutableMap;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -21,15 +19,8 @@ import java.util.Scanner;
 
 /**
  * The spout is in charge of reading the input data file containing
- * measurements from a set of sensor devices, parsing it
- * and generating the stream of records toward the MovingAverageBolt.
- *
- * Format of the input file:
- * date:yyyy-mm-dd	time:hh:mm:ss.xxx	epoch:int	deviceID:int	temperature:real	humidity:real	light:real	voltage:real
- *
- * Data example can be found here: http://db.csail.mit.edu/labdata/labdata.html
- *
- * @author Alessandra Fais
+ * vehicle-traces, parsing it and generating the stream of records
+ * toward the MapMatchingBolt.
  */
 public class FileParserSpout extends BaseRichSpout {
 
@@ -39,30 +30,22 @@ public class FileParserSpout extends BaseRichSpout {
     protected SpoutOutputCollector collector;
     protected TopologyContext context;
 
-    private static final int DATE_FIELD = 0;
-    private static final int TIME_FIELD = 1;
-    private static final int EPOCH_FIELD = 2;
-    private static final int DEVICEID_FIELD = 3;
-    private static final int TEMP_FIELD = 4;
-    private static final int HUMID_FIELD = 5;
-    private static final int LIGHT_FIELD = 6;
-    private static final int VOLT_FIELD = 7;
-
-    /*
-        maps the property that the user wants to monitor (value from sd.properties:sd.parser.value_field)
-        to the corresponding field index
-     */
-    private static final ImmutableMap<String, Integer> field_list = ImmutableMap.<String, Integer>builder()
-            .put("temp", TEMP_FIELD)
-            .put("humid", HUMID_FIELD)
-            .put("light", LIGHT_FIELD)
-            .put("volt", VOLT_FIELD)
-            .build();
-
-    private String file_path;
     private Integer rate;
     private String city;
-    private String city_shapefile;
+    private String city_tracefile;
+
+    private ArrayList<String> vehicles;
+    private ArrayList<Boolean> occupancies;
+    private ArrayList<String> times;
+    private ArrayList<Double> latitudes;
+    private ArrayList<Double> longitudes;
+    private ArrayList<Integer> speeds;
+    private ArrayList<Integer> bearings;
+
+    private double min_lat;
+    private double max_lat;
+    private double min_lon;
+    private double max_lon;
 
     private long t_start;
     private long generated;
@@ -74,7 +57,7 @@ public class FileParserSpout extends BaseRichSpout {
 
     /**
      * Constructor: it expects the file path, the generation rate and the parallelism degree.
-     * @param file path to the input data file
+     * @param c city to monitor
      * @param gen_rate if the argument value is -1 then the spout generates tuples at
      *                 the maximum rate possible (measure the bandwidth under this assumption);
      *                 if the argument value is different from -1 then the spout generates
@@ -82,10 +65,24 @@ public class FileParserSpout extends BaseRichSpout {
      *                 this generation rate)
      * @param p_deg source parallelism degree
      */
-    FileParserSpout(String file, int gen_rate, int p_deg) {
-        file_path = file;
+    FileParserSpout(String c, int gen_rate, int p_deg) {
+        city = c;
         rate = gen_rate;        // number of tuples per second
         par_deg = p_deg;        // spout parallelism degree
+
+        vehicles = new ArrayList<>();
+        occupancies = new ArrayList<>();
+        times = new ArrayList<>();
+        latitudes = new ArrayList<>();
+        longitudes = new ArrayList<>();
+        speeds = new ArrayList<>();
+        bearings = new ArrayList<>();
+
+        min_lat = 0;
+        max_lat = 0;
+        min_lon = 0;
+        max_lon = 0;
+
         generated = 0;          // total number of generated tuples
         emitted = 0;            // total number of emitted tuples
         reset = 0;
@@ -102,10 +99,10 @@ public class FileParserSpout extends BaseRichSpout {
         collector = spoutOutputCollector;
         context = topologyContext;
 
-        city = config.getString(Conf.MAP_MATCHER_SHAPEFILE);
-        city_shapefile = (city.equals(City.DUBLIN)) ?
-                TrafficMonitoringConstants.DUBLIN_SHAPEFILE :
-                TrafficMonitoringConstants.BEIJING_SHAPEFILE;
+        // set city trace file path
+        city_tracefile =  (city.equals(City.DUBLIN)) ?
+                config.getString(Conf.SPOUT_DUBLIN) :
+                config.getString(Conf.SPOUT_BEIJING);
     }
 
     /**
@@ -120,106 +117,6 @@ public class FileParserSpout extends BaseRichSpout {
             parseDublinBusTrace();
         else
             parseBeijingTaxiTrace();
-    }
-
-    private void oldMethod() {
-        File txt = new File(file_path);
-        ArrayList<String> date = new ArrayList<>();
-        ArrayList<String> time = new ArrayList<>();
-        ArrayList<Integer> epoc = new ArrayList<>();
-        ArrayList<String> devices = new ArrayList<>();
-        ArrayList<Double> temperature = new ArrayList<>();
-        ArrayList<Double> humidity = new ArrayList<>();
-        ArrayList<Double> light = new ArrayList<>();
-        ArrayList<Double> voltage = new ArrayList<>();
-
-        /*  example of the result obtained by parsing one line
-             0 = "2004-03-31"
-             1 = "03:38:15.757551"
-             2 = "2"
-             3 = "1"
-             4 = "122.153"
-             5 = "-3.91901"
-             6 = "11.04"
-             7 = "2.03397"
-         */
-
-        // parsing phase
-        try {
-            Scanner scan = new Scanner(txt);
-            while (scan.hasNextLine()) {
-                String[] fields = scan.nextLine().split("\\s+"); // regex quantifier (matches one or many whitespaces)
-                //String date_str = String.format("%s %s", fields[DATE_FIELD], fields[TIME_FIELD]);
-                if (fields.length >= 8) {
-                    date.add(fields[DATE_FIELD]);
-                    time.add(fields[TIME_FIELD]);
-                    epoc.add(new Integer(fields[EPOCH_FIELD]));
-                    devices.add(fields[DEVICEID_FIELD]);
-                    temperature.add(new Double(fields[TEMP_FIELD]));
-                    humidity.add(new Double(fields[HUMID_FIELD]));
-                    light.add(new Double(fields[LIGHT_FIELD]));
-                    voltage.add(new Double(fields[VOLT_FIELD]));
-
-                    generated++;
-                    LOG.debug("[FileParserSpout] DeviceID: {} Request property: {} {}",
-                            fields[DEVICEID_FIELD], value_field, fields[value_field_key]);
-                    LOG.debug("[FileParserSpout] Fields: {} {} {} {} {} {} {} {}",
-                            fields[DATE_FIELD],
-                            fields[TIME_FIELD],
-                            fields[EPOCH_FIELD],
-                            fields[DEVICEID_FIELD],
-                            fields[TEMP_FIELD],
-                            fields[HUMID_FIELD],
-                            fields[LIGHT_FIELD],
-                            fields[VOLT_FIELD]);
-                } else
-                    LOG.debug("[FileParserSpout] Incomplete record.");
-            }
-            scan.close();
-        } catch (FileNotFoundException | NullPointerException e) {
-            LOG.error("The file {} does not exists", file_path);
-            throw new RuntimeException("The file '" + file_path + "' does not exists");
-        }
-
-        // emit tuples
-        int interval = 1000000000; // one second (nanoseconds)
-        long t_init = System.nanoTime();
-        ArrayList<Double> data;
-        if (value_field_key == TEMP_FIELD)
-            data = temperature;
-        else if (value_field_key == HUMID_FIELD)
-            data = humidity;
-        else if (value_field_key == LIGHT_FIELD)
-            data = light;
-        else
-            data = voltage;
-
-        for (int i = 0; i < devices.size(); i++) {
-            if (rate == -1) {       // at the maximum possible rate
-                collector.emit(new Values(devices.get(i), data.get(i), System.nanoTime()));
-                emitted++;
-            } else {                // at the given rate
-                long t_now = System.nanoTime();
-                if (emitted >= rate) {
-                    LOG.info("[FileParserSpout] emitted {} VS rate {} in {} ms (delay: {} ns)",
-                            emitted, rate, (t_now - t_init) / 1000000, (double)interval / rate);
-
-                    if (t_now - t_init <= interval) {
-                        LOG.info("[FileParserSpout] waste {} ns.", interval - (t_now - t_init));
-                        active_delay(interval - (t_now - t_init));
-                    }
-                    emitted = 0;
-                    t_init = System.nanoTime();
-                    reset++;
-                }
-                collector.emit(new Values(devices.get(i), data.get(i), System.nanoTime()));
-                emitted++;
-                active_delay((double) interval / rate);
-            }
-        }
-
-        nt_execution++;
-        nt_end = System.nanoTime();
     }
 
     @Override
@@ -245,19 +142,212 @@ public class FileParserSpout extends BaseRichSpout {
                         Field.BEARING,
                         Field.LATITUDE,
                         Field.LONGITUDE,
-                        Field.TIMESTAMP
+                        Field.MIN_LAT,  // these 4 fields define the city bounding box
+                        Field.MAX_LAT,
+                        Field.MIN_LON,
+                        Field.MAX_LON,
+                        Field.TIMESTAMP  // tuple timestamp
                 )
         );
     }
 
     //------------------------------ private methods ---------------------------
 
+    /**
+     * Beijing vehicle-trace dataset is used freely, with the following acknowledgement:
+     * “This code was obtained from research conducted by the University of Southern
+     * California’s Autonomous Networks Research Group, http://anrg.usc.edu“.
+     *
+     * Format of the dataset:
+     * vehicleID, date-time, speed, bearing, latitude, longitude
+     */
     private void parseBeijingTaxiTrace() {
+        // parsing phase
+        try {
+            Scanner scan = new Scanner(new File(city_tracefile));
+            while (scan.hasNextLine()) {
+                String[] fields = scan.nextLine().split(",");
 
+                if (fields.length >= 7) {
+                    vehicles.add(fields[BeijingParsing.B_VEHICLE_ID_FIELD]);
+                    occupancies.add(true);
+                    times.add(fields[BeijingParsing.B_DATE_FIELD]);
+                    latitudes.add(Double.parseDouble(fields[BeijingParsing.B_LATITUDE_FIELD]));
+                    longitudes.add(Double.parseDouble(fields[BeijingParsing.B_LONGITUDE_FIELD]));
+                    speeds.add(((Double)Double.parseDouble(fields[BeijingParsing.B_SPEED_FIELD])).intValue());
+                    bearings.add(Integer.parseInt(fields[BeijingParsing.B_DIRECTION_FIELD]));
+
+                    generated++;
+
+                    updateMinMax(latitudes.get(latitudes.size() - 1), longitudes.get(longitudes.size() - 1));
+                } else
+                    LOG.debug("[FileParserSpout] Incomplete record.");
+            }
+            scan.close();
+        } catch (FileNotFoundException | NullPointerException e) {
+            LOG.error("The file {} does not exists", city_tracefile);
+            throw new RuntimeException("The file '" + city_tracefile + "' does not exists");
+        }
+
+        // emit tuples
+        int interval = 1000000000; // one second (nanoseconds)
+        long t_init = System.nanoTime();
+
+        LOG.info("[FileParserSpout] min_lat {}, max_lat {}, min_lon {}, max_lon {}", min_lat, max_lat, min_lon, max_lon);
+
+        for (int i = 0; i < vehicles.size(); i++) {
+            if (rate == -1) {       // at the maximum possible rate
+                collector.emit(createTuple(i));
+                emitted++;
+            } else {                // at the given rate
+                long t_now = System.nanoTime();
+                if (emitted >= rate) {
+                    LOG.info("[FileParserSpout] emitted {} VS rate {} in {} ms (delay: {} ns)",
+                            emitted, rate, (t_now - t_init) / 1000000, (double)interval / rate);
+
+                    if (t_now - t_init <= interval) {
+                        LOG.info("[FileParserSpout] waste {} ns.", interval - (t_now - t_init));
+                        active_delay(interval - (t_now - t_init));
+                    }
+                    emitted = 0;
+                    t_init = System.nanoTime();
+                    reset++;
+                }
+                collector.emit(createTuple(i));
+                emitted++;
+                active_delay((double) interval / rate);
+            }
+        }
+
+        nt_execution++;
+        nt_end = System.nanoTime();
     }
 
+    /**
+     * GPS Data about buses across Dublin City are retrieved from Dublin City
+     * Council'traffic control.
+     * See https://data.gov.ie/dataset/dublin-bus-gps-sample-data-from-dublin-city-council-insight-project
+     *
+     * Format of the dataset:
+     * timestamp, lineID, direction, journeyPatternID, timeFrame, vehicleJourneyID, busOperator, congestion,
+     * longitude, latitude, delay, blockID, vehicleID, stopID, atStop
+     */
     private void parseDublinBusTrace() {
+        // parsing phase
+        try {
+            Scanner scan = new Scanner(new File(city_tracefile));
+            while (scan.hasNextLine()) {
+                String[] fields = scan.nextLine().split(",");
 
+                if (fields.length >= 7) {
+                    vehicles.add(fields[DublinParsing.D_VEHICLE_ID_FIELD]);
+                    occupancies.add(true);
+                    times.add(fields[DublinParsing.D_TIMESTAMP_FIELD]);
+                    latitudes.add(Double.parseDouble(fields[DublinParsing.D_LATITUDE_FIELD]));
+                    longitudes.add(Double.parseDouble(fields[DublinParsing.D_LONGITUDE_FIELD]));
+                    speeds.add(0);
+                    bearings.add(Integer.parseInt(fields[DublinParsing.D_DIRECTION_FIELD]));
+
+                    generated++;
+
+                    LOG.info("[FileParserSpout] Fields: {} {} {} {} {} {}",
+                            fields[DublinParsing.D_VEHICLE_ID_FIELD],
+                            fields[DublinParsing.D_TIMESTAMP_FIELD],
+                            fields[DublinParsing.D_LATITUDE_FIELD],
+                            fields[DublinParsing.D_LONGITUDE_FIELD],
+                            fields[DublinParsing.D_DIRECTION_FIELD]);
+                } else
+                    LOG.debug("[FileParserSpout] Incomplete record.");
+            }
+            scan.close();
+        } catch (FileNotFoundException | NullPointerException e) {
+            LOG.error("The file {} does not exists", city_tracefile);
+            throw new RuntimeException("The file '" + city_tracefile + "' does not exists");
+        }
+
+        // emit tuples
+        int interval = 1000000000; // one second (nanoseconds)
+        long t_init = System.nanoTime();
+
+        for (int i = 0; i < vehicles.size(); i++) {
+            if (rate == -1) {       // at the maximum possible rate
+                collector.emit(createTuple(i));
+                emitted++;
+            } else {                // at the given rate
+                long t_now = System.nanoTime();
+                if (emitted >= rate) {
+                    LOG.info("[FileParserSpout] emitted {} VS rate {} in {} ms (delay: {} ns)",
+                            emitted, rate, (t_now - t_init) / 1000000, (double)interval / rate);
+
+                    if (t_now - t_init <= interval) {
+                        LOG.info("[FileParserSpout] waste {} ns.", interval - (t_now - t_init));
+                        active_delay(interval - (t_now - t_init));
+                    }
+                    emitted = 0;
+                    t_init = System.nanoTime();
+                    reset++;
+                }
+                collector.emit(createTuple(i));
+                emitted++;
+                active_delay((double) interval / rate);
+            }
+        }
+
+        nt_execution++;
+        nt_end = System.nanoTime();
+    }
+
+    /**
+     * Create the list of values to be sent to the
+     * MapMatchingBolt.
+     * @param i index of the tuple
+     * @return list of values content of the tuple
+     */
+    private Values createTuple(int i) {
+        return new Values(
+                vehicles.get(i),
+                times.get(i),
+                occupancies.get(i),
+                speeds.get(i),
+                bearings.get(i),
+                latitudes.get(i),
+                longitudes.get(i),
+                min_lat,
+                max_lat,
+                min_lon,
+                max_lon,
+                System.nanoTime()
+        );
+    }
+
+    /**
+     * Helper method used to fined the city bounding box interested
+     * by the trace file data.
+     * @param cur_lat current latitude
+     * @param cur_lon current longitude
+     */
+    private void updateMinMax(double cur_lat, double cur_lon) {
+        // first initialization
+        if (min_lat == 0 && max_lat == 0) {
+            min_lat = cur_lat;
+            max_lat = cur_lat;
+        }
+        if (min_lon == 0 && max_lon == 0) {
+            min_lon = cur_lon;
+            max_lon = cur_lon;
+        }
+
+        // update min
+        if ((cur_lat != 0 && cur_lat < min_lat) || (min_lat == 0))
+            min_lat = cur_lat;
+        if ((cur_lon != 0 && cur_lon < min_lon) || (min_lon == 0))
+            min_lon = cur_lon;
+
+        // update max
+        if ((cur_lat != 0 && cur_lat > max_lat) || (max_lat == 0))
+            max_lat = cur_lat;
+        if ((cur_lon != 0 && cur_lon > max_lon) || (max_lon == 0))
+            max_lon = cur_lon;
     }
 
     /**
