@@ -1,5 +1,6 @@
 package TrafficMonitoring;
 
+import Constants.TrafficMonitoringConstants;
 import Constants.TrafficMonitoringConstants.*;
 import RoadModel.GPSRecord;
 import RoadModel.RoadGridList;
@@ -15,8 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,11 +32,10 @@ public class MapMatchingBolt extends BaseRichBolt {
     protected Configuration config;
     protected TopologyContext context;
 
+    private String city;
+    private String city_shapefile;
+
     private RoadGridList sectors;
-    private double latMin;
-    private double latMax;
-    private double lonMin;
-    private double lonMax;
 
     private long t_start;
     private long t_end;
@@ -43,7 +43,8 @@ public class MapMatchingBolt extends BaseRichBolt {
     private long outliers;
     private int par_deg;
 
-    MapMatchingBolt(int p_deg) {
+    MapMatchingBolt(String c, int p_deg) {
+        city = c;
         par_deg = p_deg;     // bolt parallelism degree
     }
 
@@ -59,15 +60,23 @@ public class MapMatchingBolt extends BaseRichBolt {
         context = topologyContext;
         collector = outputCollector;
 
-        String shapeFile = config.getString(Conf.MAP_MATCHER_SHAPEFILE);
-
-        latMin = config.getDouble(Conf.MAP_MATCHER_LAT_MIN);
-        latMax = config.getDouble(Conf.MAP_MATCHER_LAT_MAX);
-        lonMin = config.getDouble(Conf.MAP_MATCHER_LON_MIN);
-        lonMax = config.getDouble(Conf.MAP_MATCHER_LON_MAX);
+        // set city shape file path
+        if (city.equals(City.DUBLIN)) {
+            city_shapefile = TrafficMonitoringConstants.DUBLIN_SHAPEFILE;
+            /*latMin = config.getDouble(Conf.MAP_MATCHER_LAT_MIN_DUBLIN);
+            latMax = config.getDouble(Conf.MAP_MATCHER_LAT_MAX_DUBLIN);
+            lonMin = config.getDouble(Conf.MAP_MATCHER_LON_MIN_DUBLIN);
+            lonMax = config.getDouble(Conf.MAP_MATCHER_LON_MAX_DUBLIN);*/
+        } else {
+            city_shapefile = TrafficMonitoringConstants.BEIJING_SHAPEFILE;
+            /*latMin = config.getDouble(Conf.MAP_MATCHER_LAT_MIN_BEIJING);
+            latMax = config.getDouble(Conf.MAP_MATCHER_LAT_MAX_BEIJING);
+            lonMin = config.getDouble(Conf.MAP_MATCHER_LON_MIN_BEIJING);
+            lonMax = config.getDouble(Conf.MAP_MATCHER_LON_MAX_BEIJING);*/
+        }
 
         try {
-            sectors = new RoadGridList(config, shapeFile);
+            sectors = new RoadGridList(config, city_shapefile);
         } catch (SQLException | IOException ex) {
             LOG.error("Error while loading shape file", ex);
             throw new RuntimeException("Error while loading shape file");
@@ -86,17 +95,22 @@ public class MapMatchingBolt extends BaseRichBolt {
             double longitude = tuple.getDoubleByField(Field.LONGITUDE);
             long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
-            if (speed <= 0) return;
-            if (longitude > lonMax || longitude < lonMin || latitude > latMax || latitude < latMin) return;
+            // city area bounding box
+            double min_lat = tuple.getDoubleByField(Field.MIN_LAT);
+            double max_lat = tuple.getDoubleByField(Field.MAX_LAT);
+            double min_lon = tuple.getDoubleByField(Field.MIN_LON);
+            double max_lon = tuple.getDoubleByField(Field.MAX_LON);
+
+            if (speed <= 0)
+                throw new InvalidObjectException("Negative speed.");
+            if (longitude > max_lon || longitude < min_lon || latitude > max_lat || latitude < min_lat)
+                throw new InvalidObjectException("Out of city area bounding box.");
 
             GPSRecord record = new GPSRecord(longitude, latitude, speed, bearing);
 
             int roadID = sectors.fetchRoadID(record);
 
             if (roadID != -1) {
-                //List<Object> values = tuple.getValues();
-                //values.add(roadID);
-
                 collector.emit(tuple,
                         new Values(
                                 vehicleID,
@@ -115,6 +129,8 @@ public class MapMatchingBolt extends BaseRichBolt {
 
             processed++;
             t_end = System.nanoTime();
+        } catch (InvalidObjectException ex) {
+            LOG.error("Invalid value received by Map-Match operator: ", ex.getMessage());
         } catch (SQLException ex) {
             LOG.error("Unable to fetch road ID", ex);
         }
