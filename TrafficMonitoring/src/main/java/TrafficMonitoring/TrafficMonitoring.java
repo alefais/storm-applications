@@ -5,6 +5,7 @@ import Constants.TrafficMonitoringConstants;
 import Constants.BaseConstants.*;
 import Constants.TrafficMonitoringConstants.*;
 import Util.config.Configuration;
+import Util.data.TupleWrapper;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
@@ -26,20 +27,20 @@ import java.util.Properties;
  */
 public class TrafficMonitoring {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileParserSpout.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TrafficMonitoring.class);
 
     public static void main(String[] args) {
         if (args.length == 1 && args[0].equals(BaseConstants.HELP)) {
             String alert =
-                    "In order to correctly run FraudDetection app you can pass the following (optional) arguments:\n" +
+                    "In order to correctly run TrafficMonitoring app you can pass the following (optional) arguments:\n" +
                     "Optional arguments (default values are specified in tm.properties or defined as constants):\n" +
                     " city (accepted values {beijing, dublin})\n" +
                     " source parallelism degree\n" +
                     " map matching bolt parallelism degree\n" +
                     " speed calculator bolt parallelism degree\n" +
                     " sink parallelism degree\n" +
-                    " source generation rate (default -1, generate at the max possible rate)\n" +
-                    " topology name (default FraudDetection)\n" +
+                    " source generation rate (default 1000 tuples/second)\n" +
+                    " topology name (default TrafficMonitoring)\n" +
                     " execution mode (default local)";
             LOG.error(alert);
         } else {
@@ -47,12 +48,12 @@ public class TrafficMonitoring {
             Config conf = new Config();
             conf.setDebug(false);
             conf.setNumWorkers(1);
+            conf.registerSerialization(TupleWrapper.class);
             try {
                 String cfg = TrafficMonitoringConstants.DEFAULT_PROPERTIES;
                 Properties p = loadProperties(cfg);
 
                 conf = Configuration.fromProperties(p);
-                LOG.info("Loaded configuration file {}.", cfg);
             } catch (IOException e) {
                 LOG.error("Unable to load configuration file.", e);
                 throw new RuntimeException("Unable to load configuration file.", e);
@@ -83,17 +84,25 @@ public class TrafficMonitoring {
 
             // prepare the topology
             TopologyBuilder builder = new TopologyBuilder();
-            builder.setSpout(Component.SPOUT, new FileParserSpout(city, gen_rate, source_par_deg), source_par_deg);
+            builder.setSpout(Component.SPOUT,
+                    new FileParserSpout(city, gen_rate, source_par_deg),
+                    source_par_deg);
 
-            builder.setBolt(Component.MAP_MATCHER, new MapMatchingBolt(city, bolt1_par_deg), bolt1_par_deg)
+            builder.setBolt(Component.MAP_MATCHER,
+                    new MapMatchingBolt(city, bolt1_par_deg),
+                    bolt1_par_deg)
                     .shuffleGrouping(Component.SPOUT);
-
-            builder.setBolt(Component.SPEED_CALCULATOR, new SpeedCalculatorBolt(bolt2_par_deg), bolt2_par_deg)
+/*
+            builder.setBolt(Component.SPEED_CALCULATOR,
+                    new SpeedCalculatorBolt(bolt2_par_deg),
+                    bolt2_par_deg)
                     .fieldsGrouping(Component.MAP_MATCHER, new Fields(Field.ROAD_ID));
 
-            builder.setBolt(Component.SINK, new ConsoleSink(sink_par_deg, gen_rate), sink_par_deg)
+            builder.setBolt(Component.SINK,
+                    new ConsoleSink(sink_par_deg, gen_rate),
+                    sink_par_deg)
                     .shuffleGrouping(Component.SPEED_CALCULATOR);
-
+*/
             // build the topology
             StormTopology topology = builder.createTopology();
 
@@ -163,7 +172,7 @@ public class TrafficMonitoring {
             properties.load(is);
             is.close();
         }
-        LOG.debug("[main] Properties loaded: {}.", properties.toString());
+        LOG.info("[main] Properties loaded: {}.", properties.toString());
         return properties;
     }
 }
