@@ -21,7 +21,7 @@ import java.util.Map;
  * to update the average speed record of the corresponding road.
  */
 public class SpeedCalculatorBolt extends BaseRichBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(MapMatchingBolt.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SpeedCalculatorBolt.class);
 
     protected OutputCollector collector;
     protected Configuration config;
