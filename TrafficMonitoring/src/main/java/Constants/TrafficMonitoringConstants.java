@@ -14,6 +14,10 @@ public interface TrafficMonitoringConstants extends BaseConstants {
         String SPOUT_DUBLIN = "tm.spout.dublin";
 
         String MAP_MATCHER_SHAPEFILE = "tm.map_matcher.shapefile";
+        String MAP_MATCHER_MIN_LAT = "tm.map_matcher.lat.min";
+        String MAP_MATCHER_MAX_LAT = "tm.map_matcher.lat.max";
+        String MAP_MATCHER_MIN_LON = "tm.map_matcher.lon.min";
+        String MAP_MATCHER_MAX_LON = "tm.map_matcher.lon.max";
         
         String ROAD_FEATURE_ID_KEY    = "tm.road.feature.id_key";
         String ROAD_FEATURE_WIDTH_KEY = "tm.road.feature.width_key";
@@ -31,14 +35,11 @@ public interface TrafficMonitoringConstants extends BaseConstants {
     
     interface Field extends BaseField {
         String VEHICLE_ID = "vehicleID";
-        String DATE_TIME = "dateTime";
-        String OCCUPIED = "occupied";
         String SPEED = "speed";
         String BEARING = "bearing";
         String LATITUDE = "latitude";
         String LONGITUDE = "longitude";
         String ROAD_ID = "roadID";
-        String NOW_DATE = "nowDate";
         String AVG_SPEED = "averageSpeed";
         String COUNT = "count";
         String MIN_LAT = "min_lat";
@@ -47,12 +48,13 @@ public interface TrafficMonitoringConstants extends BaseConstants {
         String MAX_LON = "max_lon";
     }
 
+    // cities supported by the application
     interface City {
         String BEIJING = "beijing";
         String DUBLIN = "dublin";
     }
 
-    // constants used for parsing Beijing taxi traces
+    // constants used to parse Beijing taxi traces
     interface BeijingParsing {
         int B_VEHICLE_ID_FIELD = 0; // carID
         int B_NID_FIELD = 1;
@@ -63,7 +65,7 @@ public interface TrafficMonitoringConstants extends BaseConstants {
         int B_DIRECTION_FIELD = 6;
     }
 
-    // constants used for parsing Dublin bus traces
+    // constants used to parse Dublin bus traces
     interface DublinParsing {
         int D_TIMESTAMP_FIELD = 0;
         int D_LINE_ID_FIELD = 1;

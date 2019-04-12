@@ -1,7 +1,7 @@
 package Constants;
 
 /**
- * Constants useful for all the applications.
+ * Constants set for all the applications.
  */
 public interface BaseConstants {
     String HELP = "help";
@@ -9,8 +9,8 @@ public interface BaseConstants {
     interface Execution {
         String LOCAL_MODE = "local";
         String REMOTE_MODE = "remote";
-        int DEFAULT_RATE = -1;
-        int RUNTIME_SEC = 120;  // topology is alive for 120 seconds (valid for Storm)
+        int DEFAULT_RATE = 1000;
+        int RUNTIME_SEC = 60;  // topology is alive for 120 seconds (valid for Storm)
     }
 
     interface BaseComponent {
