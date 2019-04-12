@@ -92,7 +92,7 @@ public class TrafficMonitoring {
                     new MapMatchingBolt(city, bolt1_par_deg),
                     bolt1_par_deg)
                     .shuffleGrouping(Component.SPOUT);
-/*
+
             builder.setBolt(Component.SPEED_CALCULATOR,
                     new SpeedCalculatorBolt(bolt2_par_deg),
                     bolt2_par_deg)
@@ -102,7 +102,7 @@ public class TrafficMonitoring {
                     new ConsoleSink(sink_par_deg, gen_rate),
                     sink_par_deg)
                     .shuffleGrouping(Component.SPEED_CALCULATOR);
-*/
+
             // build the topology
             StormTopology topology = builder.createTopology();
 
