@@ -15,7 +15,10 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
- * The sink is in charge of printing the results.
+ * The sink is in charge of printing the results:
+ * the average speed on a certain road (identified by
+ * a roadID) and the number of data collected for that
+ * roadID.
  */
 public class ConsoleSink extends BaseRichBolt {
 
@@ -58,6 +61,12 @@ public class ConsoleSink extends BaseRichBolt {
         int count = tuple.getIntegerByField(Field.COUNT);
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
+        LOG.debug("[ConsoleSink] Received: " +
+                roadID + " " +
+                avg_speed + " " +
+                count + " " +
+                timestamp);
+
         if (gen_rate != -1) {   // evaluate latency
             Long now = System.nanoTime();
             Long tuple_latency = (now - timestamp); // tuple latency in nanoseconds
@@ -72,37 +81,29 @@ public class ConsoleSink extends BaseRichBolt {
     @Override
     public void cleanup() {
         if (processed == 0) {
-            LOG.info("[ConsoleSink] No outliers found.");
+            LOG.info("[ConsoleSink] No elements processed.");
         } else {
-            if (gen_rate == -1) {  // evaluate bandwidth
-                long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
+            long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-                LOG.info("[ConsoleSink] Processed {} tuples (outliers) in {} ms. " +
-                                "Bandwidth is {} tuples per second.",
-                        processed, t_elapsed,
-                        processed / (t_elapsed / 1000));  // tuples per second
-            } else {  // evaluate latency
-                long acc = 0L;
-                for (Long tl : tuple_latencies) {
-                    acc += tl;
-                }
-                double avg_latency = (double) acc / tuple_latencies.size(); // average latency in nanoseconds
-                LOG.info("[ConsoleSink] Processed tuples: {}. Timestamps registered: {}.", processed, tuple_latencies.size());
-                LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
+            LOG.info("[ConsoleSink] Processed {} tuples in {} ms. " +
+                            "Bandwidth is {} tuples per second.",
+                    processed, t_elapsed,
+                    processed / (t_elapsed / 1000));  // tuples per second
+
+            long acc = 0L;
+            for (Long tl : tuple_latencies) {
+                acc += tl;
             }
+            double avg_latency = (double) acc / tuple_latencies.size(); // average latency in nanoseconds
+
+            LOG.info("[ConsoleSink] Processed tuples: {}. Timestamps registered: {}.", processed, tuple_latencies.size());
+            LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
         }
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
         outputFieldsDeclarer.declare(
-                new Fields(
-                        Field.NOW_DATE,
-                        Field.ROAD_ID,
-                        Field.AVG_SPEED,
-                        Field.COUNT,
-                        Field.TIMESTAMP
-                )
-        );
+                new Fields(Field.ROAD_ID, Field.AVG_SPEED, Field.COUNT, Field.TIMESTAMP));
     }
 }

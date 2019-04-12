@@ -13,7 +13,6 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +32,6 @@ public class SpeedCalculatorBolt extends BaseRichBolt {
     private long t_start;
     private long t_end;
     private long processed;
-    private long outliers;
     private int par_deg;
 
     SpeedCalculatorBolt(int p_deg) {
@@ -46,7 +44,6 @@ public class SpeedCalculatorBolt extends BaseRichBolt {
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         processed = 0;               // total number of processed tuples
-        outliers = 0;                // total number of outliers
 
         config = Configuration.fromMap(stormConf);
         context = topologyContext;
@@ -60,6 +57,11 @@ public class SpeedCalculatorBolt extends BaseRichBolt {
         int roadID = tuple.getIntegerByField(Field.ROAD_ID);
         int speed  = tuple.getIntegerByField(Field.SPEED);
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
+
+        LOG.debug("[SpeedCalculatorBolt] Received: " +
+                roadID + " " +
+                speed + " " +
+                timestamp);
 
         int averageSpeed = 0;
         int count = 0;
@@ -113,32 +115,27 @@ public class SpeedCalculatorBolt extends BaseRichBolt {
             }
         }
 
-        collector.emit(tuple,
-                new Values(new Date(), roadID, averageSpeed, count, timestamp));
+        collector.emit(tuple, new Values(roadID, averageSpeed, count, timestamp));
         collector.ack(tuple);
+
+        processed++;
+        t_end = System.nanoTime();
     }
 
     @Override
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[SpeedCalculatorBolt] Processed {} tuples in {} ms (found {} outliers). " +
+        LOG.info("[SpeedCalculatorBolt] Processed {} tuples in {} ms. " +
                         "Source bandwidth is {} tuples per second.",
-                processed, t_elapsed, outliers,
+                processed, t_elapsed,
                 processed / (t_elapsed / 1000));  // tuples per second
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
         outputFieldsDeclarer.declare(
-                new Fields(
-                        Field.NOW_DATE,
-                        Field.ROAD_ID,
-                        Field.AVG_SPEED,
-                        Field.COUNT,
-                        Field.TIMESTAMP
-                )
-        );
+                new Fields(Field.ROAD_ID, Field.AVG_SPEED, Field.COUNT, Field.TIMESTAMP));
     }
 
 }
