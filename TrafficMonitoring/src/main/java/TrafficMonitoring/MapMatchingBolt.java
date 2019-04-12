@@ -15,6 +15,8 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -100,7 +102,7 @@ public class MapMatchingBolt extends BaseRichBolt {
         int bearing = tuple.getIntegerByField(Field.BEARING);
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
-        LOG.info("[MapMatchingBolt] Received: " +
+        LOG.debug("[MapMatchingBolt] Received: " +
                 vehicleID + " " +
                 latitude + " " +
                 longitude + " " +
@@ -117,7 +119,7 @@ public class MapMatchingBolt extends BaseRichBolt {
 
             int roadID = sectors.fetchRoadID(record);
             if (roadID != -1) {
-                /* Road keys statistics
+                // Road keys statistics
                 if (roads.containsKey(roadID)) {
                     int count = roads.get(roadID);
                     roads.put(roadID, count + 1);
@@ -126,7 +128,7 @@ public class MapMatchingBolt extends BaseRichBolt {
                     dif_keys++;
                 }
                 all_keys++;
-                */
+
                 collector.emit(tuple, new Values(roadID, speed, timestamp));
             }
         } catch (SQLException e) {
@@ -147,7 +149,13 @@ public class MapMatchingBolt extends BaseRichBolt {
                 processed, t_elapsed,
                 processed / (t_elapsed / 1000));  // tuples per second
 
-        //LOG.info("[MapMatchingBolt] " + printKeysStatistics());
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter("TMkeys_results.log"));
+            bw.write(printKeysStatistics());
+            bw.close();
+        } catch (IOException e) {
+            LOG.error("Error while saving TM keys statistics.");
+        }
     }
 
     @Override
