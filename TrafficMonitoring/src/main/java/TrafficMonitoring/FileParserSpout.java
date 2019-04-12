@@ -47,8 +47,6 @@ public class FileParserSpout extends BaseRichSpout {
     private ArrayList<Double> speeds;
     private ArrayList<Integer> bearings;
 
-    private ArrayList<Values> values;
-
     /**
      * Constructor: it expects the city, the generation rate and the parallelism degree.
      * @param c city to monitor
@@ -68,8 +66,6 @@ public class FileParserSpout extends BaseRichSpout {
         longitudes = new ArrayList<>();
         speeds = new ArrayList<>();
         bearings = new ArrayList<>();
-
-        values = new ArrayList<>();
     }
 
     @Override
@@ -91,14 +87,12 @@ public class FileParserSpout extends BaseRichSpout {
         parse(city_tracefile);
     }
 
-    // t_init, elementi generati
-
     @Override
     public void nextTuple() {
         int interval = 1000000000; // one second (nanoseconds)
         long t_init = System.nanoTime();
 
-        for (int tuple_idx = 0; tuple_idx < values.size(); tuple_idx++) { // TODO change to vehicle.size
+        for (int tuple_idx = 0; tuple_idx < vehicles.size(); tuple_idx++) {
             long t_now = System.nanoTime();
             if (emitted >= rate) {
                 if (t_now - t_init <= interval)
@@ -106,9 +100,9 @@ public class FileParserSpout extends BaseRichSpout {
                 emitted = 0;
                 t_init = System.nanoTime();
             }
-            collector.emit(values.get(tuple_idx));
-            //collector.emit(new Values(, , ,
-            //        speeds.get(tuple_idx), bearings.get(tuple_idx), System.nanoTime()));
+            //collector.emit(values.get(tuple_idx));
+            collector.emit(new Values(vehicles.get(tuple_idx), latitudes.get(tuple_idx), longitudes.get(tuple_idx),
+                    speeds.get(tuple_idx), bearings.get(tuple_idx), System.nanoTime()));
             emitted++;
             generated++;
             active_delay((double) interval / rate);
@@ -156,18 +150,18 @@ public class FileParserSpout extends BaseRichSpout {
                  * vehicleID, date-time, latitude, longitude, speed, bearing (direction)
                  */
                 if (city.equals(City.BEIJING) && fields.length >= 7) {
-                    /*vehicles.add(fields[BeijingParsing.B_VEHICLE_ID_FIELD]);
+                    vehicles.add(fields[BeijingParsing.B_VEHICLE_ID_FIELD]);
                     latitudes.add(Double.valueOf(fields[BeijingParsing.B_LATITUDE_FIELD]));
                     longitudes.add(Double.valueOf(fields[BeijingParsing.B_LONGITUDE_FIELD]));
                     speeds.add(Double.valueOf(fields[BeijingParsing.B_SPEED_FIELD]));
-                    bearings.add(Integer.valueOf(fields[BeijingParsing.B_DIRECTION_FIELD]));*/
-                    values.add(new Values(
+                    bearings.add(Integer.valueOf(fields[BeijingParsing.B_DIRECTION_FIELD]));
+                    /*values.add(new Values(
                                     fields[BeijingParsing.B_VEHICLE_ID_FIELD],
                                     Double.parseDouble(fields[BeijingParsing.B_LATITUDE_FIELD]),
                                     Double.parseDouble(fields[BeijingParsing.B_LONGITUDE_FIELD]),
                                     (Double.parseDouble(fields[BeijingParsing.B_SPEED_FIELD])),
                                     Integer.parseInt(fields[BeijingParsing.B_DIRECTION_FIELD]),
-                                    System.nanoTime()));
+                                    System.nanoTime()));*/
                     generated++;
 
                     LOG.debug("[FileParserSpout] Beijing Fields: {} ; {} ; {} ; {} ; {}",
