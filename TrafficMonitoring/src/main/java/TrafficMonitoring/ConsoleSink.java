@@ -67,11 +67,11 @@ public class ConsoleSink extends BaseRichBolt {
                 count + " " +
                 timestamp);
 
-        if (gen_rate != -1) {   // evaluate latency
-            Long now = System.nanoTime();
-            Long tuple_latency = (now - timestamp); // tuple latency in nanoseconds
-            tuple_latencies.add(tuple_latency);
-        }
+        // evaluate latency
+        Long now = System.nanoTime();
+        Long tuple_latency = (now - timestamp); // tuple latency in nanoseconds
+        tuple_latencies.add(tuple_latency);
+
         collector.ack(tuple);
 
         processed++;
@@ -90,20 +90,19 @@ public class ConsoleSink extends BaseRichBolt {
                     processed, t_elapsed,
                     processed / (t_elapsed / 1000));  // tuples per second
 
+            // evaluate average latency
             long acc = 0L;
             for (Long tl : tuple_latencies) {
                 acc += tl;
             }
             double avg_latency = (double) acc / tuple_latencies.size(); // average latency in nanoseconds
 
-            LOG.info("[ConsoleSink] Processed tuples: {}. Timestamps registered: {}.", processed, tuple_latencies.size());
             LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
         }
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(
-                new Fields(Field.ROAD_ID, Field.AVG_SPEED, Field.COUNT, Field.TIMESTAMP));
+        outputFieldsDeclarer.declare(new Fields(Field.ROAD_ID, Field.AVG_SPEED, Field.COUNT, Field.TIMESTAMP));
     }
 }
