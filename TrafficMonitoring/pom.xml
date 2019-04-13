@@ -55,33 +55,8 @@
             <artifactId>hadoop-core</artifactId>
             <version>1.2.1</version>
         </dependency>
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.6</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.7</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.google-collections</groupId>
-            <artifactId>google-collect</artifactId>
-            <version>snapshot-20080530</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hmsonline</groupId>
-            <artifactId>storm-cassandra</artifactId>
-            <version>0.4.0-rc4</version>
-        </dependency>
-        <dependency>
-            <groupId>com.codahale.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
-            <version>3.0.2</version>
-        </dependency>
 
-        <!-- Geo -->
+        <!-- Geo dependencies -->
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-shapefile</artifactId>
@@ -102,6 +77,7 @@
     </dependencies>
 
     <build>
+        <!-- Compiling -->
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
