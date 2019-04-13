@@ -9,11 +9,6 @@ public interface FraudDetectionConstants extends BaseConstants {
     String DEFAULT_TOPO_NAME = "FraudDetection";
 
     interface Conf {
-        String SPOUT_PATH = "fd.spout.path";
-        String SPOUT_THREADS = "fd.spout.threads";
-        String SINK_THREADS = "fd.sink.threads";
-        String PREDICTOR_THREADS  = "fd.predictor.threads";
-
         String PREDICTOR_MODEL    = "fd.predictor.model";
         String MARKOV_MODEL_KEY   = "fd.markov.model.key";
         String LOCAL_PREDICTOR    = "fd.local.predictor";
@@ -21,6 +16,11 @@ public interface FraudDetectionConstants extends BaseConstants {
         String STATE_ORDINAL      = "fd.state.ordinal";
         String DETECTION_ALGO     = "fd.detection.algorithm";
         String METRIC_THRESHOLD   = "fd.metric.threshold";
+
+        String SPOUT_PATH = "fd.spout.path";
+        String SPOUT_THREADS = "fd.spout.threads";
+        String SINK_THREADS = "fd.sink.threads";
+        String PREDICTOR_THREADS  = "fd.predictor.threads";
     }
     
     interface Component extends BaseComponent {
