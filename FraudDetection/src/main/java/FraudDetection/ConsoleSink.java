@@ -36,7 +36,6 @@ public class ConsoleSink extends BaseRichBolt {
     ConsoleSink(int p_deg, int g_rate) {
         par_deg = p_deg;         // sink parallelism degree
         gen_rate = g_rate;       // generation rate of the source (spout)
-        tuple_latencies = new ArrayList<>();
     }
 
     @Override
@@ -49,6 +48,8 @@ public class ConsoleSink extends BaseRichBolt {
         config = Configuration.fromMap(stormConf);
         context = topologyContext;
         collector = outputCollector;
+
+        tuple_latencies = new ArrayList<>();
     }
 
     @Override
