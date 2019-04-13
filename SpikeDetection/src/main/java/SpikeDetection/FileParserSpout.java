@@ -36,22 +36,13 @@ public class FileParserSpout extends BaseRichSpout {
     protected SpoutOutputCollector collector;
     protected TopologyContext context;
 
-    private static final int DATE_FIELD = 0;
-    private static final int TIME_FIELD = 1;
-    private static final int EPOCH_FIELD = 2;
-    private static final int DEVICEID_FIELD = 3;
-    private static final int TEMP_FIELD = 4;
-    private static final int HUMID_FIELD = 5;
-    private static final int LIGHT_FIELD = 6;
-    private static final int VOLT_FIELD = 7;
-
     // maps the property that the user wants to monitor (value from sd.properties:sd.parser.value_field)
     // to the corresponding field index
     private static final ImmutableMap<String, Integer> field_list = ImmutableMap.<String, Integer>builder()
-            .put("temp", TEMP_FIELD)
-            .put("humid", HUMID_FIELD)
-            .put("light", LIGHT_FIELD)
-            .put("volt", VOLT_FIELD)
+            .put("temp", DatasetParsing.TEMP_FIELD)
+            .put("humid", DatasetParsing.HUMID_FIELD)
+            .put("light", DatasetParsing.LIGHT_FIELD)
+            .put("volt", DatasetParsing.VOLT_FIELD)
             .build();
 
     private String file_path;
@@ -137,27 +128,27 @@ public class FileParserSpout extends BaseRichSpout {
                 String[] fields = scan.nextLine().split("\\s+"); // regex quantifier (matches one or many whitespaces)
                 //String date_str = String.format("%s %s", fields[DATE_FIELD], fields[TIME_FIELD]);
                 if (fields.length >= 8) {
-                    date.add(fields[DATE_FIELD]);
-                    time.add(fields[TIME_FIELD]);
-                    epoc.add(new Integer(fields[EPOCH_FIELD]));
-                    devices.add(fields[DEVICEID_FIELD]);
-                    temperature.add(new Double(fields[TEMP_FIELD]));
-                    humidity.add(new Double(fields[HUMID_FIELD]));
-                    light.add(new Double(fields[LIGHT_FIELD]));
-                    voltage.add(new Double(fields[VOLT_FIELD]));
+                    date.add(fields[DatasetParsing.DATE_FIELD]);
+                    time.add(fields[DatasetParsing.TIME_FIELD]);
+                    epoc.add(new Integer(fields[DatasetParsing.EPOCH_FIELD]));
+                    devices.add(fields[DatasetParsing.DEVICEID_FIELD]);
+                    temperature.add(new Double(fields[DatasetParsing.TEMP_FIELD]));
+                    humidity.add(new Double(fields[DatasetParsing.HUMID_FIELD]));
+                    light.add(new Double(fields[DatasetParsing.LIGHT_FIELD]));
+                    voltage.add(new Double(fields[DatasetParsing.VOLT_FIELD]));
 
                     generated++;
                     LOG.debug("[FileParserSpout] DeviceID: {} Request property: {} {}",
-                            fields[DEVICEID_FIELD], value_field, fields[value_field_key]);
+                            fields[DatasetParsing.DEVICEID_FIELD], value_field, fields[value_field_key]);
                     LOG.debug("[FileParserSpout] Fields: {} {} {} {} {} {} {} {}",
-                            fields[DATE_FIELD],
-                            fields[TIME_FIELD],
-                            fields[EPOCH_FIELD],
-                            fields[DEVICEID_FIELD],
-                            fields[TEMP_FIELD],
-                            fields[HUMID_FIELD],
-                            fields[LIGHT_FIELD],
-                            fields[VOLT_FIELD]);
+                            fields[DatasetParsing.DATE_FIELD],
+                            fields[DatasetParsing.TIME_FIELD],
+                            fields[DatasetParsing.EPOCH_FIELD],
+                            fields[DatasetParsing.DEVICEID_FIELD],
+                            fields[DatasetParsing.TEMP_FIELD],
+                            fields[DatasetParsing.HUMID_FIELD],
+                            fields[DatasetParsing.LIGHT_FIELD],
+                            fields[DatasetParsing.VOLT_FIELD]);
                 } else
                     LOG.debug("[FileParserSpout] Incomplete record.");
             }
@@ -171,11 +162,11 @@ public class FileParserSpout extends BaseRichSpout {
         int interval = 1000000000; // one second (nanoseconds)
         long t_init = System.nanoTime();
         ArrayList<Double> data;
-        if (value_field_key == TEMP_FIELD)
+        if (value_field_key == DatasetParsing.TEMP_FIELD)
             data = temperature;
-        else if (value_field_key == HUMID_FIELD)
+        else if (value_field_key == DatasetParsing.HUMID_FIELD)
             data = humidity;
-        else if (value_field_key == LIGHT_FIELD)
+        else if (value_field_key == DatasetParsing.LIGHT_FIELD)
             data = light;
         else
             data = voltage;
