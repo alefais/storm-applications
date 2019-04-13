@@ -46,10 +46,6 @@ public interface TrafficMonitoringConstants extends BaseConstants {
         String ROAD_ID = "roadID";
         String AVG_SPEED = "averageSpeed";
         String COUNT = "count";
-        String MIN_LAT = "min_lat";
-        String MAX_LAT = "max_lat";
-        String MIN_LON = "min_lon";
-        String MAX_LON = "max_lon";
     }
 
     // cities supported by the application
