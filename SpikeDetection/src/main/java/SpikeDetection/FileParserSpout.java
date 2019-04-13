@@ -53,10 +53,19 @@ public class FileParserSpout extends BaseRichSpout {
     private long t_start;
     private long generated;
     private long emitted;
-    private int reset;
     private long nt_execution;
     private long nt_end;
     private int par_deg;
+
+    // state of the spout (contains parsed data)
+    private ArrayList<String> date;
+    private ArrayList<String> time;
+    private ArrayList<Integer> epoc;
+    private ArrayList<String> devices;
+    private ArrayList<Double> temperature;
+    private ArrayList<Double> humidity;
+    private ArrayList<Double> light;
+    private ArrayList<Double> voltage;
 
     /**
      * Constructor: it expects the file path, the generation rate and the parallelism degree.
@@ -74,13 +83,21 @@ public class FileParserSpout extends BaseRichSpout {
         par_deg = p_deg;        // spout parallelism degree
         generated = 0;          // total number of generated tuples
         emitted = 0;            // total number of emitted tuples
-        reset = 0;
         nt_execution = 0;       // number of executions of nextTuple() method
+
+        date = new ArrayList<>();
+        time = new ArrayList<>();
+        epoc = new ArrayList<>();
+        devices = new ArrayList<>();
+        temperature = new ArrayList<>();
+        humidity = new ArrayList<>();
+        light = new ArrayList<>();
+        voltage = new ArrayList<>();
     }
 
     @Override
     public void open(Map conf, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
-        LOG.info("[FileParserSpout] Started ({} replicas).", par_deg);
+        LOG.info("[FileParserSpout] Started ({} replicas with rate {}).", par_deg, rate);
 
         t_start = System.nanoTime(); // spout start time in nanoseconds
 
@@ -95,35 +112,80 @@ public class FileParserSpout extends BaseRichSpout {
     /**
      * The method is called in an infinite loop by design, this means that the
      * stream is continuously generated from the data source file.
-     * The parsing phase splits each line of the input dataset extracting date and time, deviceID
-     * and information provided by the sensor about temperature, humidity, light and voltage.
      */
     @Override
     public void nextTuple() {
-        File txt = new File(file_path);
-        ArrayList<String> date = new ArrayList<>();
-        ArrayList<String> time = new ArrayList<>();
-        ArrayList<Integer> epoc = new ArrayList<>();
-        ArrayList<String> devices = new ArrayList<>();
-        ArrayList<Double> temperature = new ArrayList<>();
-        ArrayList<Double> humidity = new ArrayList<>();
-        ArrayList<Double> light = new ArrayList<>();
-        ArrayList<Double> voltage = new ArrayList<>();
+        int interval = 1000000000; // one second (nanoseconds)
+        long t_init = System.nanoTime();
 
-        /*  example of the result obtained by parsing one line
-             0 = "2004-03-31"
-             1 = "03:38:15.757551"
-             2 = "2"
-             3 = "1"
-             4 = "122.153"
-             5 = "-3.91901"
-             6 = "11.04"
-             7 = "2.03397"
-         */
+        ArrayList<Double> data;
+        if (value_field_key == DatasetParsing.TEMP_FIELD)
+            data = temperature;
+        else if (value_field_key == DatasetParsing.HUMID_FIELD)
+            data = humidity;
+        else if (value_field_key == DatasetParsing.LIGHT_FIELD)
+            data = light;
+        else
+            data = voltage;
 
-        // parsing phase
+        for (int i = 0; i < devices.size(); i++) {
+            if (rate == -1) {       // at the maximum possible rate
+                collector.emit(new Values(devices.get(i), data.get(i), System.nanoTime()));
+                generated++;
+            } else {                // at the given rate
+                long t_now = System.nanoTime();
+                if (emitted >= rate) {
+                    if (t_now - t_init <= interval)
+                        active_delay(interval - (t_now - t_init));
+                    emitted = 0;
+                    t_init = System.nanoTime();
+                }
+                collector.emit(new Values(devices.get(i), data.get(i), System.nanoTime()));
+                emitted++;
+                generated++;
+                active_delay((double) interval / rate);
+            }
+        }
+        nt_execution++;
+        nt_end = System.nanoTime();
+    }
+
+    @Override
+    public void close() {
+        long t_elapsed = (nt_end - t_start) / 1000000;  // elapsed time in milliseconds
+
+        LOG.info("[FileParserSpout] Terminated after {} generations.", nt_execution);
+        LOG.info("[FileParserSpout] Emitted {} tuples in {} ms. " +
+                        "Source bandwidth is {} tuples per second.",
+                generated, t_elapsed,
+                generated / (t_elapsed / 1000));  // tuples per second
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
+        outputFieldsDeclarer.declare(new Fields(Field.DEVICE_ID, Field.VALUE, Field.TIMESTAMP));
+    }
+
+    //------------------------------ private methods ---------------------------
+
+    /**
+     * Parse sensors' data and populate the state of the spout.
+     * The parsing phase splits each line of the input dataset extracting date and time, deviceID
+     * and information provided by the sensor about temperature, humidity, light and voltage.
+     *
+     * Example of the result obtained by parsing one line:
+     *  0 = "2004-03-31"
+     *  1 = "03:38:15.757551"
+     *  2 = "2"
+     *  3 = "1"
+     *  4 = "122.153"
+     *  5 = "-3.91901"
+     *  6 = "11.04"
+     *  7 = "2.03397"
+     */
+    private void parseDataset() {
         try {
-            Scanner scan = new Scanner(txt);
+            Scanner scan = new Scanner(new File(file_path));
             while (scan.hasNextLine()) {
                 String[] fields = scan.nextLine().split("\\s+"); // regex quantifier (matches one or many whitespaces)
                 //String date_str = String.format("%s %s", fields[DATE_FIELD], fields[TIME_FIELD]);
@@ -136,8 +198,8 @@ public class FileParserSpout extends BaseRichSpout {
                     humidity.add(new Double(fields[DatasetParsing.HUMID_FIELD]));
                     light.add(new Double(fields[DatasetParsing.LIGHT_FIELD]));
                     voltage.add(new Double(fields[DatasetParsing.VOLT_FIELD]));
-
                     generated++;
+
                     LOG.debug("[FileParserSpout] DeviceID: {} Request property: {} {}",
                             fields[DatasetParsing.DEVICEID_FIELD], value_field, fields[value_field_key]);
                     LOG.debug("[FileParserSpout] Fields: {} {} {} {} {} {} {} {}",
@@ -153,66 +215,13 @@ public class FileParserSpout extends BaseRichSpout {
                     LOG.debug("[FileParserSpout] Incomplete record.");
             }
             scan.close();
+            LOG.info("[FileParserSpout] Parsed dataset: generated {} tuples.", generated);
+            generated = 0;
         } catch (FileNotFoundException | NullPointerException e) {
             LOG.error("The file {} does not exists", file_path);
             throw new RuntimeException("The file '" + file_path + "' does not exists");
         }
-
-        // emit tuples
-        int interval = 1000000000; // one second (nanoseconds)
-        long t_init = System.nanoTime();
-        ArrayList<Double> data;
-        if (value_field_key == DatasetParsing.TEMP_FIELD)
-            data = temperature;
-        else if (value_field_key == DatasetParsing.HUMID_FIELD)
-            data = humidity;
-        else if (value_field_key == DatasetParsing.LIGHT_FIELD)
-            data = light;
-        else
-            data = voltage;
-
-        for (int i = 0; i < devices.size(); i++) {
-            if (rate == -1) {       // at the maximum possible rate
-                collector.emit(new Values(devices.get(i), data.get(i), System.nanoTime()));
-                emitted++;
-            } else {                // at the given rate
-                long t_now = System.nanoTime();
-                if (emitted >= rate) {
-                    if (t_now - t_init <= interval)
-                        active_delay(interval - (t_now - t_init));
-
-                    emitted = 0;
-                    t_init = System.nanoTime();
-                    reset++;
-                }
-                collector.emit(new Values(devices.get(i), data.get(i), System.nanoTime()));
-                emitted++;
-                active_delay((double) interval / rate);
-            }
-        }
-
-        nt_execution++;
-        nt_end = System.nanoTime();
     }
-
-    @Override
-    public void close() {
-        long t_elapsed = (nt_end - t_start) / 1000000;  // elapsed time in milliseconds
-
-        LOG.info("[FileParserSpout] Terminated after {} generations.", nt_execution);
-        LOG.info("[FileParserSpout] Generated {} tuples in {} ms. Emitted {} tuples in {} ms. " +
-                        "Source bandwidth is {} tuples per second.",
-                generated, t_elapsed,
-                emitted + (rate * reset), t_elapsed,
-                generated / (t_elapsed / 1000));  // tuples per second
-    }
-
-    @Override
-    public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields(Field.DEVICE_ID, Field.VALUE, Field.TIMESTAMP));
-    }
-
-    //------------------------------ private methods ---------------------------
 
     /**
      * Add some active delay (busy-waiting function).
