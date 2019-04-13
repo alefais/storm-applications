@@ -26,7 +26,7 @@ import java.util.Properties;
  */
 public class FraudDetection {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileParserSpout.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FraudDetection.class);
 
     public static void main(String[] args) {
         if (args.length == 1 && args[0].equals(BaseConstants.HELP)) {
