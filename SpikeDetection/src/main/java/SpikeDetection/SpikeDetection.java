@@ -26,20 +26,20 @@ import java.util.Properties;
  */
 public class SpikeDetection {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileParserSpout.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SpikeDetection.class);
 
     public static void main(String[] args) {
         if (args.length == 1 && args[0].equals(BaseConstants.HELP)) {
             String alert =
-                    "In order to correctly run FraudDetection app you can pass the following (optional) arguments:\n" +
-                    "Optional arguments (default values are specified in fd.properties or defined as constants):\n" +
+                    "In order to correctly run SpikeDetection app you can pass the following (optional) arguments:\n" +
+                    "Optional arguments (default values are specified in sd.properties or defined as constants):\n" +
                     " file path\n" +
                     " source parallelism degree\n" +
                     " moving average bolt parallelism degree\n" +
                     " spike detector bolt parallelism degree\n" +
                     " sink parallelism degree\n" +
                     " source generation rate (default -1, generate at the max possible rate)\n" +
-                    " topology name (default FraudDetection)\n" +
+                    " topology name (default SpikeDetection)\n" +
                     " execution mode (default local)";
             LOG.error(alert);
         } else {
