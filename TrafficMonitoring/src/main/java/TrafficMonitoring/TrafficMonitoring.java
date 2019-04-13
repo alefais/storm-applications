@@ -48,7 +48,6 @@ public class TrafficMonitoring {
             Config conf = new Config();
             conf.setDebug(false);
             conf.setNumWorkers(1);
-            conf.registerSerialization(TupleWrapper.class);
             try {
                 String cfg = TrafficMonitoringConstants.DEFAULT_PROPERTIES;
                 Properties p = loadProperties(cfg);
