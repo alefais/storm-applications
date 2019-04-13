@@ -19,7 +19,7 @@ import java.util.Map;
  * using a properly defined threshold.
  */
 public class SpikeDetectorBolt extends BaseRichBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(MovingAverageBolt.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SpikeDetectorBolt.class);
 
     protected OutputCollector collector;
     protected Configuration config;
