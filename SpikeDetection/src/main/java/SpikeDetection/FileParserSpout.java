@@ -66,6 +66,7 @@ public class FileParserSpout extends BaseRichSpout {
     private ArrayList<Double> humidity;
     private ArrayList<Double> light;
     private ArrayList<Double> voltage;
+    private ArrayList<Double> data;
 
     /**
      * Constructor: it expects the file path, the generation rate and the parallelism degree.
@@ -105,8 +106,22 @@ public class FileParserSpout extends BaseRichSpout {
         collector = spoutOutputCollector;
         context = topologyContext;
 
+        // set value field to be monitored
         value_field = config.getString(Conf.PARSER_VALUE_FIELD);
         value_field_key = field_list.get(value_field);
+
+        // save tuples as a state
+        parseDataset();
+
+        // data to be emitted (select w.r.t. value_field value)
+        if (value_field_key == DatasetParsing.TEMP_FIELD)
+            data = temperature;
+        else if (value_field_key == DatasetParsing.HUMID_FIELD)
+            data = humidity;
+        else if (value_field_key == DatasetParsing.LIGHT_FIELD)
+            data = light;
+        else
+            data = voltage;
     }
 
     /**
@@ -117,16 +132,6 @@ public class FileParserSpout extends BaseRichSpout {
     public void nextTuple() {
         int interval = 1000000000; // one second (nanoseconds)
         long t_init = System.nanoTime();
-
-        ArrayList<Double> data;
-        if (value_field_key == DatasetParsing.TEMP_FIELD)
-            data = temperature;
-        else if (value_field_key == DatasetParsing.HUMID_FIELD)
-            data = humidity;
-        else if (value_field_key == DatasetParsing.LIGHT_FIELD)
-            data = light;
-        else
-            data = voltage;
 
         for (int i = 0; i < devices.size(); i++) {
             if (rate == -1) {       // at the maximum possible rate
