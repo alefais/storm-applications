@@ -45,6 +45,10 @@ public class FileParserSpout extends BaseRichSpout {
     private long nt_end;
     private int par_deg;
 
+    // state of the spout (contains parsed data)
+    private ArrayList<String> entities;
+    private ArrayList<String> records;
+
     /**
      * Constructor: it expects the file path and the split expression needed
      * to parse the file (it depends on the format of the input data).
@@ -66,30 +70,54 @@ public class FileParserSpout extends BaseRichSpout {
         emitted = 0;            // total number of emitted tuples
         reset = 0;
         nt_execution = 0;       // number of executions of nextTuple() method
+
+        entities = new ArrayList<>();
+        records = new ArrayList<>();
     }
 
     @Override
     public void open(Map conf, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
-        LOG.info("[FileParserSpout] Started ({} replicas).", par_deg);
+        LOG.info("[FileParserSpout] Started ({} replicas with rate {}).", par_deg, rate);
 
         t_start = System.nanoTime(); // spout start time in nanoseconds
 
         config = Configuration.fromMap(conf);
         collector = spoutOutputCollector;
         context = topologyContext;
+
+        // save tuples as a state
+        parseDataset();
     }
 
     /**
      * The method is called in an infinite loop by design, this means that the
      * stream is continuously generated from the data source file.
-     * The parsing phase splits each line of the input dataset in 2 parts:
-     * - first string identifies the customer (entityID)
-     * - second string contains the transactionID and the transaction type
      */
     @Override
     public void nextTuple() {
-        //nextTupleAll();
-        nextTupleParseAndGen();
+        int interval = 1000000000; // one second (nanoseconds)
+        long t_init = System.nanoTime();
+
+        for (int i = 0; i < entities.size(); i++) {
+            if (rate == -1) {       // at the maximum possible rate
+                collector.emit(new Values(entities.get(i), records.get(i), System.nanoTime()));
+                generated++;
+            } else {                // at the given rate
+                long t_now = System.nanoTime();
+                if (emitted >= rate) {
+                    if (t_now - t_init <= interval)
+                        active_delay(interval - (t_now - t_init));
+                    emitted = 0;
+                    t_init = System.nanoTime();
+                }
+                collector.emit(new Values(entities.get(i), records.get(i), System.nanoTime()));
+                emitted++;
+                generated++;
+                active_delay((double) interval / rate);
+            }
+        }
+        nt_execution++;
+        nt_end = System.nanoTime();
     }
 
     @Override
@@ -97,10 +125,9 @@ public class FileParserSpout extends BaseRichSpout {
         long t_elapsed = (nt_end - t_start) / 1000000;  // elapsed time in milliseconds
 
         LOG.info("[FileParserSpout] Terminated after {} generations.", nt_execution);
-        LOG.debug("[FileParserSpout] Generated {} tuples in {} ms. Emitted {} tuples in {} ms. " +
+        LOG.info("[FileParserSpout] Emitted {} tuples in {} ms. " +
                         "Source bandwidth is {} tuples per second.",
                 generated, t_elapsed,
-                emitted + (rate * reset), t_elapsed,
                 generated / (t_elapsed / 1000));  // tuples per second
     }
 
@@ -111,67 +138,15 @@ public class FileParserSpout extends BaseRichSpout {
 
     //------------------------------ private methods ---------------------------
 
-    /*
-        For each line of the input file parse and emit a new tuple.
+    /**
+     * Parse credit cards' transactions data and populate the state of the spout.
+     * The parsing phase splits each line of the input dataset in 2 parts:
+     * - first string identifies the customer (entityID)
+     * - second string contains the transactionID and the transaction type
      */
-    private void nextTupleAll() {
-        File txt = new File(file_path);
-        String entity;
-        String record;
-
+    private void parseDataset() {
         try {
-            Scanner scan = new Scanner(txt);
-            int interval = 1000000000; // one second (nanoseconds)
-            long t_init = System.nanoTime();
-
-            while (scan.hasNextLine()) {
-                String[] line = scan.nextLine().split(split_regex, 2);
-                entity = line[0];
-                record = line[1];
-
-                LOG.debug("[FileParserSpout] EntityID: {} Record: {}", entity, record);
-
-                if (rate == -1) {   // emit at the maximum possible rate
-                    collector.emit(new Values(entity, record, System.nanoTime()));
-                    emitted++;
-                } else {            // emit at the given rate
-                    long t_now = System.nanoTime();
-                    if (emitted >= rate) {
-                        if (t_now - t_init <= interval)
-                            active_delay(interval - (t_now - t_init));
-
-                        emitted = 0;
-                        t_init = System.nanoTime();
-                        reset++;
-                    }
-                    collector.emit(new Values(entity, record, System.nanoTime()));
-                    emitted++;
-
-                    active_delay((double)interval / rate);
-                }
-                generated++;
-            }
-            scan.close();
-        } catch (FileNotFoundException | NullPointerException e) {
-            LOG.error("The file {} does not exists", file_path);
-            throw new RuntimeException("The file '" + file_path + "' does not exists");
-        }
-
-        nt_execution++;
-        nt_end = System.nanoTime();
-    }
-
-    /*
-        First parse the whole input file and then start emitting tuples.
-     */
-    private void nextTupleParseAndGen() {
-        File txt = new File(file_path);
-        ArrayList<String> entities = new ArrayList<>();
-        ArrayList<String> records = new ArrayList<>();
-
-        // parsing phase
-        try {
-            Scanner scan = new Scanner(txt);
+            Scanner scan = new Scanner(new File(file_path));
             while (scan.hasNextLine()) {
                 String[] line = scan.nextLine().split(split_regex, 2);
                 entities.add(line[0]);
@@ -181,37 +156,12 @@ public class FileParserSpout extends BaseRichSpout {
                 LOG.debug("[FileParserSpout] EntityID: {} Record: {}", line[0], line[1]);
             }
             scan.close();
+            LOG.info("[FileParserSpout] Parsed dataset: generated {} tuples.", generated);
+            generated = 0;
         } catch (FileNotFoundException | NullPointerException e) {
             LOG.error("The file {} does not exists", file_path);
             throw new RuntimeException("The file '" + file_path + "' does not exists");
         }
-
-        // emit tuples
-        int interval = 1000000000; // one second (nanoseconds)
-        long t_init = System.nanoTime();
-
-        for (int i = 0; i < entities.size(); i++) {
-            if (rate == -1) {       // at the maximum possible rate
-                collector.emit(new Values(entities.get(i), records.get(i), System.nanoTime()));
-                emitted++;
-            } else {                // at the given rate
-                long t_now = System.nanoTime();
-                if (emitted >= rate) {
-                    if (t_now - t_init <= interval)
-                        active_delay(interval - (t_now - t_init));
-
-                    emitted = 0;
-                    t_init = System.nanoTime();
-                    reset++;
-                }
-                collector.emit(new Values(entities.get(i), records.get(i), System.nanoTime()));
-                emitted++;
-                active_delay((double) interval / rate);
-            }
-        }
-
-        nt_execution++;
-        nt_end = System.nanoTime();
     }
 
     /**
