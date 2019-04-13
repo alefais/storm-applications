@@ -5,7 +5,6 @@ import Constants.TrafficMonitoringConstants;
 import Constants.BaseConstants.*;
 import Constants.TrafficMonitoringConstants.*;
 import Util.config.Configuration;
-import Util.data.TupleWrapper;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
