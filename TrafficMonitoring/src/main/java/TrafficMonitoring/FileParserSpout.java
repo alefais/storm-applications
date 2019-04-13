@@ -100,7 +100,6 @@ public class FileParserSpout extends BaseRichSpout {
                 emitted = 0;
                 t_init = System.nanoTime();
             }
-            //collector.emit(values.get(tuple_idx));
             collector.emit(new Values(vehicles.get(tuple_idx), latitudes.get(tuple_idx), longitudes.get(tuple_idx),
                     speeds.get(tuple_idx), bearings.get(tuple_idx), System.nanoTime()));
             emitted++;
@@ -155,13 +154,6 @@ public class FileParserSpout extends BaseRichSpout {
                     longitudes.add(Double.valueOf(fields[BeijingParsing.B_LONGITUDE_FIELD]));
                     speeds.add(Double.valueOf(fields[BeijingParsing.B_SPEED_FIELD]));
                     bearings.add(Integer.valueOf(fields[BeijingParsing.B_DIRECTION_FIELD]));
-                    /*values.add(new Values(
-                                    fields[BeijingParsing.B_VEHICLE_ID_FIELD],
-                                    Double.parseDouble(fields[BeijingParsing.B_LATITUDE_FIELD]),
-                                    Double.parseDouble(fields[BeijingParsing.B_LONGITUDE_FIELD]),
-                                    (Double.parseDouble(fields[BeijingParsing.B_SPEED_FIELD])),
-                                    Integer.parseInt(fields[BeijingParsing.B_DIRECTION_FIELD]),
-                                    System.nanoTime()));*/
                     generated++;
 
                     LOG.debug("[FileParserSpout] Beijing Fields: {} ; {} ; {} ; {} ; {}",
