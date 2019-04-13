@@ -90,6 +90,8 @@ public class MovingAverageBolt extends BaseRichBolt {
         outputFieldsDeclarer.declare(new Fields(Field.DEVICE_ID, Field.MOVING_AVG, Field.VALUE, Field.TIMESTAMP));
     }
 
+    //------------------------------ private methods ---------------------------
+
     private double movingAverage(String deviceID, double nextDouble) {
         LinkedList<Double> valueList = new LinkedList<>();
         double sum = 0.0;
