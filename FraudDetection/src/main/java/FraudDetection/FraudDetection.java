@@ -35,7 +35,7 @@ public class FraudDetection {
                     "Optional arguments (default values are specified in fd.properties or defined as constants):\n" +
                     " file path\n" +
                     " source parallelism degree\n" +
-                    " bolt parallelism degree\n" +
+                    " predictor bolt parallelism degree\n" +
                     " sink parallelism degree\n" +
                     " source generation rate (default -1, generate at the max possible rate)\n" +
                     " topology name (default FraudDetection)\n" +
