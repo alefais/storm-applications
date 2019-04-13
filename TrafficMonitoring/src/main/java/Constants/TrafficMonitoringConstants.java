@@ -14,10 +14,14 @@ public interface TrafficMonitoringConstants extends BaseConstants {
         String SPOUT_DUBLIN = "tm.spout.dublin";
 
         String MAP_MATCHER_SHAPEFILE = "tm.map_matcher.shapefile";
-        String MAP_MATCHER_MIN_LAT = "tm.map_matcher.lat.min";
-        String MAP_MATCHER_MAX_LAT = "tm.map_matcher.lat.max";
-        String MAP_MATCHER_MIN_LON = "tm.map_matcher.lon.min";
-        String MAP_MATCHER_MAX_LON = "tm.map_matcher.lon.max";
+        String MAP_MATCHER_BEIJING_MIN_LAT = "tm.map_matcher.beijing.lat.min";
+        String MAP_MATCHER_BEIJING_MAX_LAT = "tm.map_matcher.beijing.lat.max";
+        String MAP_MATCHER_BEIJING_MIN_LON = "tm.map_matcher.beijing.lon.min";
+        String MAP_MATCHER_BEIJING_MAX_LON = "tm.map_matcher.beijing.lon.max";
+        String MAP_MATCHER_DUBLIN_MIN_LAT = "tm.map_matcher.dublin.lat.min";
+        String MAP_MATCHER_DUBLIN_MAX_LAT = "tm.map_matcher.dublin.lat.max";
+        String MAP_MATCHER_DUBLIN_MIN_LON = "tm.map_matcher.dublin.lon.min";
+        String MAP_MATCHER_DUBLIN_MAX_LON = "tm.map_matcher.dublin.lon.max";
         
         String ROAD_FEATURE_ID_KEY    = "tm.road.feature.id_key";
         String ROAD_FEATURE_WIDTH_KEY = "tm.road.feature.width_key";
