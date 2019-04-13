@@ -185,7 +185,7 @@ public class FileParserSpout extends BaseRichSpout {
                     vehicles.add(fields[DublinParsing.D_VEHICLE_ID_FIELD]);
                     latitudes.add(Double.valueOf(fields[DublinParsing.D_LATITUDE_FIELD]));
                     longitudes.add(Double.valueOf(fields[DublinParsing.D_LONGITUDE_FIELD]));
-                    speeds.add(0.0); // speed value is not present in the used dataset
+                    speeds.add(0.0); // speed values are not present in the used dataset
                     bearings.add(Integer.valueOf(fields[DublinParsing.D_DIRECTION_FIELD]));
                     generated++;
 

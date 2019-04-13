@@ -73,24 +73,31 @@ public class MapMatchingBolt extends BaseRichBolt {
         context = topologyContext;
         collector = outputCollector;
 
-        // set city shape file path
-        String city_shapefile = (city.equals(City.DUBLIN)) ?
-            TrafficMonitoringConstants.DUBLIN_SHAPEFILE :
-            TrafficMonitoringConstants.BEIJING_SHAPEFILE;
-
-        // set city bounding box
-        min_lat = config.getDouble(Conf.MAP_MATCHER_MIN_LAT, 39.689602);
-        max_lat = config.getDouble(Conf.MAP_MATCHER_MAX_LAT, 40.122410);
-        min_lon = config.getDouble(Conf.MAP_MATCHER_MIN_LON, 116.105789);
-        max_lon = config.getDouble(Conf.MAP_MATCHER_MAX_LON, 116.670021);
+        // set city shape file path and city bounding box values
+        String city_shapefile;
+        if (city.equals(City.DUBLIN)) {
+            city_shapefile = TrafficMonitoringConstants.DUBLIN_SHAPEFILE;
+            min_lat = config.getDouble(Conf.MAP_MATCHER_DUBLIN_MIN_LAT, 53.28006);
+            max_lat = config.getDouble(Conf.MAP_MATCHER_DUBLIN_MAX_LAT, 53.406071);
+            min_lon = config.getDouble(Conf.MAP_MATCHER_DUBLIN_MIN_LON, -6.381911);
+            max_lon = config.getDouble(Conf.MAP_MATCHER_DUBLIN_MAX_LON, -6.141994);
+        } else {
+            city_shapefile = TrafficMonitoringConstants.BEIJING_SHAPEFILE;
+            min_lat = config.getDouble(Conf.MAP_MATCHER_BEIJING_MIN_LAT, 39.689602);
+            max_lat = config.getDouble(Conf.MAP_MATCHER_BEIJING_MAX_LAT, 40.122410);
+            min_lon = config.getDouble(Conf.MAP_MATCHER_BEIJING_MIN_LON, 116.105789);
+            max_lon = config.getDouble(Conf.MAP_MATCHER_BEIJING_MAX_LON, 116.670021);
+        }
 
         try {
             sectors = new RoadGridList(config, city_shapefile);
         } catch (SQLException | IOException ex) {
             throw new RuntimeException("Error while loading shape file");
         }
-        LOG.info("[MapMatchingBolt] Sectors: " + sectors +
-                " Bounds: [" + min_lat + ", " + max_lat + "] [" + min_lon + ", " + max_lon + "]");
+
+        LOG.debug("[MapMatchingBolt] Sectors: " + sectors +
+                " Bounds (" + city + " case): [" +
+                min_lat + ", " + max_lat + "] [" + min_lon + ", " + max_lon + "]");
     }
 
     @Override
