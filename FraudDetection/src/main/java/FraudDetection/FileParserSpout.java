@@ -31,7 +31,6 @@ public class FileParserSpout extends BaseRichSpout {
     protected Configuration config;
     protected SpoutOutputCollector collector;
     protected TopologyContext context;
-    protected Map<String, Fields> fields;
 
     private String file_path;
     private String split_regex;
