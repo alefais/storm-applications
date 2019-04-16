@@ -33,7 +33,7 @@ public class WordCount {
             String alert =
                     "In order to correctly run WordCount app you can pass the following (optional) arguments:\n" +
                     "Optional arguments (default values are specified in wc.properties or defined as constants):\n" +
-                    " source type (assume value in {file, generator})" +
+                    " source type (assume value in {file, generator})\n" +
                     " file path (valid only if the source type is file)\n" +
                     " source parallelism degree\n" +
                     " splitter bolt parallelism degree\n" +
