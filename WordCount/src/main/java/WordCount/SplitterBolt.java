@@ -52,10 +52,14 @@ public class SplitterBolt extends BaseRichBolt {
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
         if (line != null) {
+            LOG.debug("[SplitterBolt] Received line `" + line + "`");
+
             String[] words = line.split("\\W");
             for (String word : words) {
-                if (!StringUtils.isBlank(word))
+                if (!StringUtils.isBlank(word)) {
                     collector.emit(tuple, new Values(word, timestamp));
+                    LOG.debug("[SplitterBolt] Sending `" + word + "`");
+                }
             }
         }
         collector.ack(tuple);

@@ -57,7 +57,7 @@ public class ConsoleSink extends BaseRichBolt {
         long count = tuple.getLongByField(Field.COUNT);
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
-        LOG.info("[ConsoleSink] Received `" +
+        LOG.debug("[ConsoleSink] Received `" +
                 word + "` occurred " +
                 count + " times since now.");
 
