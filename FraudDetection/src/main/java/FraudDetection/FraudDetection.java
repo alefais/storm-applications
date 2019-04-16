@@ -62,17 +62,17 @@ public class FraudDetection {
                     args[0] :
                     ((Configuration) conf).getString(Conf.SPOUT_PATH);
             int source_par_deg = (args.length > 1) ?
-                    new Integer(args[1]) :
+                    Integer.parseInt(args[1]) :
                     ((Configuration) conf).getInt(Conf.SPOUT_THREADS);
             int bolt_par_deg = (args.length > 2) ?
-                    new Integer(args[2]) :
+                    Integer.parseInt(args[2]) :
                     ((Configuration) conf).getInt(Conf.PREDICTOR_THREADS);
             int sink_par_deg = (args.length > 3) ?
-                    new Integer(args[3]) :
+                    Integer.parseInt(args[3]) :
                     ((Configuration) conf).getInt(Conf.SINK_THREADS);
 
             // source generation rate (for tests)
-            int gen_rate = (args.length > 4) ? new Integer(args[4]) : Execution.DEFAULT_RATE;
+            int gen_rate = (args.length > 4) ? Integer.parseInt(args[4]) : Execution.DEFAULT_RATE;
 
             String topology_name = (args.length > 5) ? args[5] : FraudDetectionConstants.DEFAULT_TOPO_NAME;
             String ex_mode = (args.length > 6) ? args[6] : Execution.LOCAL_MODE;
