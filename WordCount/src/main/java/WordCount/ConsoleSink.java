@@ -54,7 +54,7 @@ public class ConsoleSink extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         String word = tuple.getStringByField(Field.WORD);
-        double count = tuple.getDoubleByField(Field.COUNT);
+        long count = tuple.getLongByField(Field.COUNT);
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
         LOG.info("[ConsoleSink] Received `" +
