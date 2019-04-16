@@ -1,58 +1,212 @@
 package WordCount;
 
+import Constants.BaseConstants;
+import Constants.BaseConstants.Execution;
+import Constants.WordCountConstants;
+import Constants.WordCountConstants.*;
+import Util.config.Configuration;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.StormSubmitter;
+import org.apache.storm.generated.AlreadyAliveException;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.generated.StormTopology;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 /**
- * The topology class.
+ * The topology entry class.
  */
 public class WordCount {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Spout.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WordCount.class);
 
     public static void main(String[] args) {
-        if (args.length == 0) {
+        if (args.length == 1 && args[0].equals(BaseConstants.HELP)) {
             String alert =
-                    "In order to correctly run WordCount app you need to pass the following arguments:\n" +
-                    " file path\n split char\n parallelism degree\n";
+                    "In order to correctly run WordCount app you can pass the following (optional) arguments:\n" +
+                    "Optional arguments (default values are specified in wc.properties or defined as constants):\n" +
+                    " source type (assume value in {file, generator})" +
+                    " file path (valid only if the source type is file)\n" +
+                    " source parallelism degree\n" +
+                    " splitter bolt parallelism degree\n" +
+                    " counter bolt parallelism degree\n" +
+                    " sink parallelism degree\n" +
+                    " source generation rate (default -1, generate at the max possible rate)\n" +
+                    " topology name (default WordCount)\n" +
+                    " execution mode (default local)";
             LOG.error(alert);
         } else {
-            String file_path = args[0];
-            String file_split = (args.length > 1) ? args[1] : " ";
-            Integer parallelism_degree = (args.length > 2) ? new Integer(args[2]) : 1;
-            //String mode = (args.length > 3) ?
-            String topology_name = (args.length > 3) ? args[3] : "WordCount";
-
-            // create the topology
-
-            TopologyBuilder builder = new TopologyBuilder();
-            builder.setSpout("spout", new Spout(file_path, file_split), 1);
-
-            builder.setBolt("counter_bolt", new CounterBolt(), parallelism_degree)
-                    .shuffleGrouping("spout");
-
-            builder.setBolt("sink", new Sink(), parallelism_degree)
-                    .shuffleGrouping("counter_bolt");
-
-            // prepare the configuration
+            // load default configuration
             Config conf = new Config();
             conf.setDebug(false);
             conf.setNumWorkers(1);
-
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology(topology_name, conf, builder.createTopology());
-
             try {
-                Thread.sleep(100000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                String cfg = WordCountConstants.DEFAULT_PROPERTIES;
+                Properties p = loadProperties(cfg);
+
+                conf = Configuration.fromProperties(p);
+                LOG.debug("Loaded configuration file {}.", cfg);
+            } catch (IOException e) {
+                LOG.error("Unable to load configuration file.", e);
+                throw new RuntimeException("Unable to load configuration file.", e);
             }
 
-            cluster.killTopology(topology_name);
-            cluster.shutdown();
+            // parse command line arguments
+            String source;
+            String file_path = null;
+            int source_par_deg;
+            int bolt1_par_deg;
+            int bolt2_par_deg;
+            int sink_par_deg;
+            int gen_rate;
+            String topology_name;
+            String ex_mode;
+
+            source = (args.length > 0 && (args[0].equals(Conf.FILE_SOURCE) || args[0].equals(Conf.GEN_SOURCE))) ?
+                    args[0] :
+                    Conf.FILE_SOURCE;
+            if (source.equals(Conf.FILE_SOURCE)) {
+                file_path = (args.length > 1) ?
+                        args[1] :
+                        ((Configuration) conf).getString(Conf.SPOUT_PATH);
+                source_par_deg = (args.length > 2) ?
+                        Integer.parseInt(args[2]) :
+                        ((Configuration) conf).getInt(Conf.SPOUT_THREADS);
+                bolt1_par_deg = (args.length > 3) ?
+                        Integer.parseInt(args[3]) :
+                        ((Configuration) conf).getInt(Conf.SPLITTER_THREADS);
+                bolt2_par_deg = (args.length > 4) ?
+                        Integer.parseInt(args[4]) :
+                        ((Configuration) conf).getInt(Conf.COUNTER_THREADS);
+                sink_par_deg = (args.length > 5) ?
+                        Integer.parseInt(args[5]) :
+                        ((Configuration) conf).getInt(Conf.SINK_THREADS);
+
+                // source generation rate (for tests)
+                gen_rate = (args.length > 6) ? Integer.parseInt(args[6]) : Execution.DEFAULT_RATE;
+
+                topology_name = (args.length > 7) ? args[7] : WordCountConstants.DEFAULT_TOPO_NAME;
+                ex_mode = (args.length > 8) ? args[8] : Execution.LOCAL_MODE;
+            } else {
+                source_par_deg = (args.length > 1) ?
+                        Integer.parseInt(args[1]) :
+                        ((Configuration) conf).getInt(Conf.SPOUT_THREADS);
+                bolt1_par_deg = (args.length > 2) ?
+                        Integer.parseInt(args[2]) :
+                        ((Configuration) conf).getInt(Conf.SPLITTER_THREADS);
+                bolt2_par_deg = (args.length > 3) ?
+                        Integer.parseInt(args[3]) :
+                        ((Configuration) conf).getInt(Conf.COUNTER_THREADS);
+                sink_par_deg = (args.length > 4) ?
+                        Integer.parseInt(args[4]) :
+                        ((Configuration) conf).getInt(Conf.SINK_THREADS);
+
+                // source generation rate (for tests)
+                gen_rate = (args.length > 5) ? Integer.parseInt(args[5]) : Execution.DEFAULT_RATE;
+
+                topology_name = (args.length > 6) ? args[6] : WordCountConstants.DEFAULT_TOPO_NAME;
+                ex_mode = (args.length > 7) ? args[7] : Execution.LOCAL_MODE;
+            }
+
+            // prepare the topology
+            TopologyBuilder builder = new TopologyBuilder();
+            builder.setSpout(Component.SPOUT,
+                    new FileParserSpout(source, file_path, gen_rate, source_par_deg),
+                    source_par_deg);
+
+            builder.setBolt(Component.SPLITTER,
+                    new SplitterBolt(bolt1_par_deg),
+                    bolt1_par_deg)
+                    .shuffleGrouping(Component.SPOUT);
+
+            builder.setBolt(Component.COUNTER,
+                    new CounterBolt(bolt2_par_deg),
+                    bolt2_par_deg)
+                    .fieldsGrouping(Component.SPLITTER, new Fields(Field.WORD));
+
+            builder.setBolt(Component.SINK,
+                    new ConsoleSink(sink_par_deg, gen_rate),
+                    sink_par_deg)
+                    .shuffleGrouping(Component.COUNTER);
+
+            // build the topology
+            StormTopology topology = builder.createTopology();
+
+            // run the topology
+            try {
+                if (ex_mode.equals(Execution.LOCAL_MODE))
+                    runTopologyLocally(topology, topology_name, conf, Execution.RUNTIME_SEC);
+                else if (ex_mode.equals(Execution.REMOTE_MODE))
+                    runTopologyRemotely(topology, topology_name, conf);
+            } catch (InterruptedException e) {
+                LOG.error("Error in running topology locally.", e);
+            } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException e) {
+                LOG.error("Error in running topology remotely.", e);
+            }
         }
+    }
+
+    /**
+     * Run the topology locally.
+     * @param topology the topology to be executed
+     * @param topology_name the name of the topology
+     * @param conf the configurations for the execution
+     * @param runtime_seconds for how much time the topology will run
+     * @throws InterruptedException
+     */
+    private static void runTopologyLocally(StormTopology topology, String topology_name, Config conf, int runtime_seconds)
+            throws InterruptedException {
+
+        LOG.info("[main] Starting Storm in local mode to run for {} seconds.", runtime_seconds);
+        LocalCluster cluster = new LocalCluster();
+
+        LOG.info("[main] Topology {} submitted.", topology_name);
+        cluster.submitTopology(topology_name, conf, topology);
+        Thread.sleep((long) runtime_seconds * 1000);
+
+        cluster.killTopology(topology_name);
+        LOG.info("[main] Topology {} finished.", topology_name);
+
+        cluster.shutdown();
+        LOG.info("[main] Local Storm cluster was shutdown.");
+    }
+
+    /**
+     * Run the topology remotely.
+     * @param topology the topology to be executed
+     * @param topology_name the name of the topology
+     * @param conf the configurations for the execution
+     * @throws AlreadyAliveException
+     * @throws InvalidTopologyException
+     * @throws AuthorizationException
+     */
+    private static void runTopologyRemotely(StormTopology topology, String topology_name, Config conf)
+            throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+        StormSubmitter.submitTopology(topology_name, conf, topology);
+    }
+
+    /**
+     * Load configuration properties for the application.
+     * @param filename the name of the properties file
+     * @return the persistent set of properties loaded from the file
+     * @throws IOException
+     */
+    private static Properties loadProperties(String filename) throws IOException {
+        Properties properties = new Properties();
+        InputStream is = WordCount.class.getResourceAsStream(filename);
+        if (is != null) {
+            properties.load(is);
+            is.close();
+        }
+        LOG.info("[main] Properties loaded: {}.", properties.toString());
+        return properties;
     }
 }
