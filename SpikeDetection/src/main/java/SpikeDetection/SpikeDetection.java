@@ -76,7 +76,7 @@ public class SpikeDetection {
                     ((Configuration) conf).getInt(Conf.SINK_THREADS);
 
             // source generation rate (for tests)
-            int gen_rate = (args.length > 5) ? new Integer(args[5]) : Execution.DEFAULT_RATE;
+            int gen_rate = (args.length > 5) ? Integer.parseInt(args[5]) : Execution.DEFAULT_RATE;
 
             String topology_name = (args.length > 6) ? args[6] : SpikeDetectionConstants.DEFAULT_TOPO_NAME;
             String ex_mode = (args.length > 7) ? args[7] : Execution.LOCAL_MODE;
