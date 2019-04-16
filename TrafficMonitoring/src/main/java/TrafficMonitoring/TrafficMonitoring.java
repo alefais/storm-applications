@@ -62,20 +62,20 @@ public class TrafficMonitoring {
                     args[0] :
                     ((Configuration) conf).getString(Conf.MAP_MATCHER_SHAPEFILE); // take default value from properties file
             int source_par_deg = (args.length > 1) ?
-                    new Integer(args[1]) :
+                    Integer.parseInt(args[1]) :
                     ((Configuration) conf).getInt(Conf.SPOUT_THREADS);
             int bolt1_par_deg = (args.length > 2) ?
-                    new Integer(args[2]) :
+                    Integer.parseInt(args[2]) :
                     ((Configuration) conf).getInt(Conf.MAP_MATCHER_THREADS);
             int bolt2_par_deg = (args.length > 3) ?
-                    new Integer(args[3]) :
+                    Integer.parseInt(args[3]) :
                     ((Configuration) conf).getInt(Conf.SPEED_CALCULATOR_THREADS);
             int sink_par_deg = (args.length > 4) ?
-                    new Integer(args[4]) :
+                    Integer.parseInt(args[4]) :
                     ((Configuration) conf).getInt(Conf.SINK_THREADS);
 
             // source generation rate (for tests)
-            int gen_rate = (args.length > 5) ? new Integer(args[5]) : Execution.DEFAULT_RATE;
+            int gen_rate = (args.length > 5) ? Integer.parseInt(args[5]) : Execution.DEFAULT_RATE;
 
             String topology_name = (args.length > 6) ? args[6] : TrafficMonitoringConstants.DEFAULT_TOPO_NAME;
             String ex_mode = (args.length > 7) ? args[7] : Execution.LOCAL_MODE;
