@@ -67,7 +67,7 @@ public class FileParserSpout extends BaseRichSpout {
         nt_execution = 0;           // number of executions of nextTuple() method
 
         lines = new ArrayList<>();
-        bytes = 0;              // total number of bytes emitted
+        bytes = 0;                  // total number of bytes emitted
     }
 
     @Override
