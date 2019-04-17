@@ -34,7 +34,7 @@ public class FileParserSpout extends BaseRichSpout {
 
     private String type;
     private String file_path;
-    private Integer rate;
+    private int rate;
 
     private long t_start;
     private long generated;
@@ -43,8 +43,9 @@ public class FileParserSpout extends BaseRichSpout {
     private long nt_end;
     private int par_deg;
 
-    // state of the spout (contains parsed data)
-    private ArrayList<String> lines;
+    private ArrayList<String> lines;    // state of the spout (contains parsed data)
+    private long bytes;                 // accumulates the amount of bytes emitted
+
     /**
      * Constructor: it expects the source type, the file path, the generation rate and the parallelism degree.
      * @param source_type can be file or generator
@@ -53,19 +54,20 @@ public class FileParserSpout extends BaseRichSpout {
      *                 the maximum rate possible (measure the bandwidth under this assumption);
      *                 if the argument value is different from -1 then the spout generates
      *                 tuples at the rate given by this parameter (measure the latency given
-     *                 this generation rate)
+     *                 this generation rate); this value is expressed in MB/s
      * @param p_deg source parallelism degree
      */
     FileParserSpout(String source_type, String file, int gen_rate, int p_deg) {
         type = source_type;
         file_path = file;
-        rate = gen_rate;        // number of tuples per second
-        par_deg = p_deg;        // spout parallelism degree
-        generated = 0;          // total number of generated tuples
-        emitted = 0;            // total number of emitted tuples
-        nt_execution = 0;       // number of executions of nextTuple() method
+        rate = gen_rate * 1048576;  // number of bytes per second
+        par_deg = p_deg;            // spout parallelism degree
+        generated = 0;              // total number of generated tuples
+        emitted = 0;                // number of emitted data measured in bytes
+        nt_execution = 0;           // number of executions of nextTuple() method
 
         lines = new ArrayList<>();
+        bytes = 0;              // total number of bytes emitted
     }
 
     @Override
@@ -94,6 +96,7 @@ public class FileParserSpout extends BaseRichSpout {
         for (int i = 0; i < lines.size(); i++) {
             if (rate == -1) {       // at the maximum possible rate
                 collector.emit(new Values(lines.get(i), System.nanoTime()));
+                bytes += lines.get(i).length();
                 generated++;
             } else {                // at the given rate
                 long t_now = System.nanoTime();
@@ -104,7 +107,8 @@ public class FileParserSpout extends BaseRichSpout {
                     t_init = System.nanoTime();
                 }
                 collector.emit(new Values(lines.get(i), System.nanoTime()));
-                emitted++;
+                bytes += lines.get(i).length();
+                emitted += lines.get(i).length();
                 generated++;
                 active_delay((double) interval / rate);
             }
@@ -117,11 +121,11 @@ public class FileParserSpout extends BaseRichSpout {
     public void close() {
         long t_elapsed = (nt_end - t_start) / 1000000;  // elapsed time in milliseconds
 
-        LOG.info("[FileParserSpout] Terminated after {} generations.", nt_execution);
-        LOG.info("[FileParserSpout] Emitted {} tuples in {} ms. " +
-                        "Source bandwidth is {} tuples per second.",
-                generated, t_elapsed,
-                generated / (t_elapsed / 1000));  // tuples per second
+        LOG.info("[FileParserSpout] Terminated after " + nt_execution + " generations " +
+                "(generated " + generated + " lines, for a total amount of " + (bytes / 1048576) + " MB)");
+        LOG.info("[FileParserSpout] Source bandwidth is " +
+                (bytes / 1048576) / (t_elapsed / 1000) +  // express bytes/s in MB/s
+                " MB per second.");
     }
 
     @Override
