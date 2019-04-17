@@ -27,8 +27,8 @@ public class SplitterBolt extends BaseRichBolt {
 
     private long t_start;
     private long t_end;
-    private long processed;
     private int par_deg;
+    private long bytes;
 
     SplitterBolt(int p_deg) {
         par_deg = p_deg;     // bolt parallelism degree
@@ -39,7 +39,7 @@ public class SplitterBolt extends BaseRichBolt {
         LOG.info("[SplitterBolt] Started ({} replicas).", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
-        processed = 0;               // total number of processed tuples
+        bytes = 0;                   // total number of processed bytes
 
         config = Configuration.fromMap(stormConf);
         context = topologyContext;
@@ -53,6 +53,7 @@ public class SplitterBolt extends BaseRichBolt {
 
         if (line != null) {
             LOG.debug("[SplitterBolt] Received line `" + line + "`");
+            bytes += line.length();
 
             String[] words = line.split("\\W");
             for (String word : words) {
@@ -64,7 +65,6 @@ public class SplitterBolt extends BaseRichBolt {
         }
         collector.ack(tuple);
 
-        processed++;
         t_end = System.nanoTime();
     }
 
@@ -72,10 +72,9 @@ public class SplitterBolt extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[SplitterBolt] Processed {} tuples in {} ms. " +
-                        "Source bandwidth is {} tuples per second.",
-                processed, t_elapsed,
-                processed / (t_elapsed / 1000));  // tuples per second
+        LOG.info("[SplitterBolt] Processed " + (bytes / 1048576) + " in " + t_elapsed + " ms.");
+        LOG.info("[SplitterBolt] Bandwidth is " +
+                (bytes / 1048576) / (t_elapsed / 1000) + " MB per second.");
     }
 
     @Override

@@ -30,8 +30,8 @@ public class CounterBolt extends BaseRichBolt {
 
     private long t_start;
     private long t_end;
-    private long processed;
     private int par_deg;
+    private long bytes;
 
     CounterBolt(int p_deg) {
         par_deg = p_deg;     // bolt parallelism degree
@@ -42,7 +42,7 @@ public class CounterBolt extends BaseRichBolt {
         LOG.info("[CounterBolt] Started ({} replicas).", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
-        processed = 0;               // total number of processed tuples
+        bytes = 0;                   // total number of processed bytes
 
         config = Configuration.fromMap(stormConf);
         context = topologyContext;
@@ -55,6 +55,8 @@ public class CounterBolt extends BaseRichBolt {
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
         if (word != null) {
+            bytes += word.length();
+
             MutableLong count = counts.computeIfAbsent(word, k -> new MutableLong(0));
             count.increment();
 
@@ -62,7 +64,6 @@ public class CounterBolt extends BaseRichBolt {
         }
         collector.ack(tuple);
 
-        processed++;
         t_end = System.nanoTime();
     }
 
@@ -70,10 +71,9 @@ public class CounterBolt extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[CounterBolt] Processed {} tuples in {} ms. " +
-                        "Source bandwidth is {} tuples per second.",
-                processed, t_elapsed,
-                processed / (t_elapsed / 1000));  // tuples per second
+        LOG.info("[CounterBolt] Processed " + (bytes / 1048576) + " in " + t_elapsed + " ms.");
+        LOG.info("[CounterBolt] Bandwidth is " +
+                (bytes / 1048576) / (t_elapsed / 1000) + " MB per second.");
     }
 
     @Override

@@ -27,9 +27,9 @@ public class ConsoleSink extends BaseRichBolt {
 
     private long t_start;
     private long t_end;
-    private long processed;
     private int par_deg;
     private int gen_rate;
+    private long bytes;
 
     private ArrayList<Long> tuple_latencies;
 
@@ -44,7 +44,7 @@ public class ConsoleSink extends BaseRichBolt {
         LOG.info("[ConsoleSink] Started ({} replicas).", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
-        processed = 0;               // total number of processed tuples
+        bytes = 0;                   // total number of processed bytes
 
         config = Configuration.fromMap(stormConf);
         context = topologyContext;
@@ -68,22 +68,21 @@ public class ConsoleSink extends BaseRichBolt {
         }
         collector.ack(tuple);
 
-        processed++;
+        bytes += word.length();
         t_end = System.nanoTime();
     }
 
     @Override
     public void cleanup() {
-        if (processed == 0) {
+        if (bytes == 0) {
             LOG.info("[ConsoleSink] No words received.");
         } else {
             if (gen_rate == -1) {  // evaluate bandwidth
                 long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-                LOG.info("[ConsoleSink] Processed {} tuples in {} ms. " +
-                                "Bandwidth is {} tuples per second.",
-                        processed, t_elapsed,
-                        processed / (t_elapsed / 1000));  // tuples per second
+                LOG.info("[ConsoleSink] Processed " + (bytes / 1048576) + " in " + t_elapsed + " ms.");
+                LOG.info("[ConsoleSink] Bandwidth is " +
+                        (bytes / 1048576) / (t_elapsed / 1000) + " MB per second.");
             } else {  // evaluate latency
                 long acc = 0L;
                 for (Long tl : tuple_latencies) {
@@ -91,7 +90,6 @@ public class ConsoleSink extends BaseRichBolt {
                 }
                 double avg_latency = (double) acc / tuple_latencies.size(); // average latency in nanoseconds
 
-                LOG.info("[ConsoleSink] Processed tuples: {}. Timestamps registered: {}.", processed, tuple_latencies.size());
                 LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
             }
         }
