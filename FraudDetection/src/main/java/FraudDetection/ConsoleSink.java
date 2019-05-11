@@ -15,7 +15,10 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
- * The sink is in charge of printing the results.
+ *  @author  Alessandra Fais
+ *  @version April 2019
+ *
+ *  Sink node that receives and prints the results.
  */
 public class ConsoleSink extends BaseRichBolt {
 
@@ -41,7 +44,7 @@ public class ConsoleSink extends BaseRichBolt {
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
-        LOG.info("[ConsoleSink] Started ({} replicas).", par_deg);
+        LOG.info("[Sink] started ({} replicas)", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         processed = 0;               // total number of processed tuples
@@ -58,7 +61,7 @@ public class ConsoleSink extends BaseRichBolt {
         String states = tuple.getStringByField(Field.STATES);
         Long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
-        LOG.debug("[ConsoleSink] EntityID {}, score {}, states {}.", entityID, score, states);
+        LOG.debug("[Predictor] outlier: entityID " + entityID + ", score " + score + ", states " + states);
 
         if (gen_rate != -1) {   // evaluate latency
             Long now = System.nanoTime();
@@ -74,24 +77,24 @@ public class ConsoleSink extends BaseRichBolt {
     @Override
     public void cleanup() {
         if (processed == 0) {
-            LOG.info("[ConsoleSink] No outliers found.");
+            LOG.info("[Sink] processed tuples: " + processed);
         } else {
             if (gen_rate == -1) {  // evaluate bandwidth
                 long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-                LOG.debug("[ConsoleSink] Processed {} tuples (outliers) in {} ms. " +
-                                "Bandwidth is {} tuples per second.",
-                        processed, t_elapsed,
-                        processed / (t_elapsed / 1000));  // tuples per second
-            } else {  // evaluate latency
+                LOG.info("[Sink] processed tuples: " + processed +
+                          ", bandwidth: " +  processed / (t_elapsed / 1000) +
+                          " tuples/s");
+            } else {  // evaluate average latency value
                 long acc = 0L;
                 for (Long tl : tuple_latencies) {
                     acc += tl;
                 }
                 double avg_latency = (double) acc / tuple_latencies.size(); // average latency in nanoseconds
 
-                LOG.info("[ConsoleSink] Processed tuples: {}. Timestamps registered: {}.", processed, tuple_latencies.size());
-                LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
+                LOG.info("[Sink] processed tuples: " + processed +
+                        ", latency: " +  avg_latency / 1000000 + // average latency in milliseconds
+                        " ms");
             }
         }
     }

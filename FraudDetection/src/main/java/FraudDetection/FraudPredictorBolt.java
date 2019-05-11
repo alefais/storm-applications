@@ -19,10 +19,13 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
- * The bolt is in charge of implementing outliers detection.
- * Given a transaction sequence of a customer, there is a
- * probability associated with each path of state transition,
- * which indicates the chances of fraudolent activities.
+ *  @author  Alessandra Fais
+ *  @version April 2019
+ *
+ *  The bolt is in charge of implementing outliers detection.
+ *  Given a transaction sequence of a customer, there is a probability associated with each path
+ *  of state transition which indicates the chances of fraudolent activities. Only tuples for
+ *  which an outlier has been identified are sent out.
  */
 public class FraudPredictorBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(FraudPredictorBolt.class);
@@ -44,7 +47,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
-        LOG.info("[FraudPredictorBolt] Started ({} replicas).", par_deg);
+        LOG.info("[Predictor] started ({} replicas)", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         processed = 0;               // total number of processed tuples
@@ -56,7 +59,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
 
         String strategy = config.getString(Conf.PREDICTOR_MODEL);
         if (strategy.equals("mm")) {
-            LOG.debug("[FraudPredictorBolt] Creating Markov Model Predictor.");
+            LOG.debug("[Predictor] creating Markov Model Predictor");
             predictor = new MarkovModelPredictor(config);
         }
     }
@@ -68,6 +71,7 @@ public class FraudPredictorBolt extends BaseRichBolt {
         Long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
         Prediction p = predictor.execute(entityID, record);
+        LOG.debug("[Predictor] tuple: entityID " + entityID + ", record " + record + ", ts " + timestamp);
 
         // send outliers
         if (p.isOutlier()) {
@@ -75,8 +79,8 @@ public class FraudPredictorBolt extends BaseRichBolt {
             collector.emit(tuple,
                     new Values(entityID, p.getScore(), StringUtils.join(p.getStates(), ","), timestamp));
 
-            LOG.debug("[FraudPredictorBolt] Sending outlier: EntityID {} score {} states {}",
-                    entityID, p.getScore(), StringUtils.join(p.getStates(), ","));
+            LOG.debug("[Predictor] outlier: entityID " + entityID + ", score " + p.getScore() +
+                            ", states " + StringUtils.join(p.getStates(), ","));
         }
         collector.ack(tuple);
 
@@ -88,10 +92,11 @@ public class FraudPredictorBolt extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[FraudPredictorBolt] Processed {} tuples in {} ms (found {} outliers). " +
-                        "Source bandwidth is {} tuples per second.",
-                processed, t_elapsed, outliers,
-                processed / (t_elapsed / 1000));  // tuples per second
+        LOG.info("[Predictor] execution time: " + t_elapsed +
+                " ms, processed: " + processed +
+                ", outliers: " + outliers +
+                ", bandwidth: " + processed / (t_elapsed / 1000) +  // tuples per second
+                " tuples/s");
     }
 
     @Override
