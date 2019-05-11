@@ -19,7 +19,7 @@ import java.util.Scanner;
 
 /**
  *  @author Alessandra Fais
- *  @version April 2019
+ *  @version May 2019
  *
  *  The spout is in charge of reading the input data file, parsing it
  *  and generating the stream of records toward the FraudPredictorBolt.

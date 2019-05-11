@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  *  @author  Alessandra Fais
- *  @version April 2019
+ *  @version May 2019
  *
  *  Sink node that receives and prints the results.
  */
@@ -61,7 +61,7 @@ public class ConsoleSink extends BaseRichBolt {
         String states = tuple.getStringByField(Field.STATES);
         Long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
-        LOG.debug("[Predictor] outlier: entityID " + entityID + ", score " + score + ", states " + states);
+        LOG.debug("[Sink] outlier: entityID " + entityID + ", score " + score + ", states " + states);
 
         if (gen_rate != -1) {   // evaluate latency
             Long now = System.nanoTime();
@@ -93,8 +93,8 @@ public class ConsoleSink extends BaseRichBolt {
                 double avg_latency = (double) acc / tuple_latencies.size(); // average latency in nanoseconds
 
                 LOG.info("[Sink] processed tuples: " + processed +
-                        ", latency: " +  avg_latency / 1000000 + // average latency in milliseconds
-                        " ms");
+                         ", latency: " +  avg_latency / 1000000 + // average latency in milliseconds
+                         " ms");
             }
         }
     }

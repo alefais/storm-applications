@@ -20,7 +20,7 @@ import java.util.Map;
 
 /**
  *  @author  Alessandra Fais
- *  @version April 2019
+ *  @version May 2019
  *
  *  The bolt is in charge of implementing outliers detection.
  *  Given a transaction sequence of a customer, there is a probability associated with each path

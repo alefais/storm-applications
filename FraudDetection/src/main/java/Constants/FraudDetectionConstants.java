@@ -2,7 +2,7 @@ package Constants;
 
 /**
  *  @author  Alessandra Fais
- *  @version April 2019
+ *  @version May 2019
  *
  *  Constants peculiar of the FraudDetection application.
  */

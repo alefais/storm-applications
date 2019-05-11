@@ -23,7 +23,7 @@ import java.util.Properties;
 
 /**
  *  @author Alessandra Fais
- *  @version April 2019
+ *  @version May 2019
  *
  *  The topology entry class.
  */
