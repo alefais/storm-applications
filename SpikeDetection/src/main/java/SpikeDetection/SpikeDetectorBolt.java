@@ -15,8 +15,11 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
- * Detects spikes in the measurements received by sensors
- * using a properly defined threshold.
+ *  @author Alessandra Fais
+ *  @version May 2019
+ *
+ *  The bolt is in charge of detecting spikes in the measurements received by sensors
+ *  with respect to a properly defined threshold.
  */
 public class SpikeDetectorBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SpikeDetectorBolt.class);
@@ -38,7 +41,7 @@ public class SpikeDetectorBolt extends BaseRichBolt {
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
-        LOG.info("[SpikeDetectorBolt] Started ({} replicas).", par_deg);
+        LOG.info("[Detector] started ({} replicas)", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         processed = 0;               // total number of processed tuples
@@ -58,6 +61,11 @@ public class SpikeDetectorBolt extends BaseRichBolt {
         double next_property_value = tuple.getDoubleByField(Field.VALUE);
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
+        LOG.debug("[Detector] tuple: deviceID " + deviceID +
+                    ", incremental_average " + moving_avg_instant +
+                    ", next_value " + next_property_value
+                    ", ts " + timestamp);
+
         if (Math.abs(next_property_value - moving_avg_instant) > spike_threshold * moving_avg_instant) {
             spikes++;
             collector.emit(tuple, new Values(deviceID, moving_avg_instant, next_property_value, timestamp));
@@ -72,10 +80,11 @@ public class SpikeDetectorBolt extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[SpikeDetectorBolt] Processed {} tuples in {} ms (detected {} spikes). " +
-                        "Source bandwidth is {} tuples per second.",
-                processed, t_elapsed, spikes,
-                processed / (t_elapsed / 1000));  // tuples per second
+        LOG.info("[Detector] execution time: " + t_elapsed +
+                " ms, processed: " + processed +
+                ", spikes: " + spikes +
+                ", bandwidth: " + processed / (t_elapsed / 1000) +  // tuples per second
+                " tuples/s");
     }
 
 
