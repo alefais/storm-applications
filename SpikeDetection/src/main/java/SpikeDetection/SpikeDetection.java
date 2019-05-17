@@ -38,7 +38,7 @@ public class SpikeDetection {
                     "Optional arguments (default values are specified in sd.properties or defined as constants):\n" +
                     " file path\n" +
                     " source parallelism degree\n" +
-                    " moving average bolt parallelism degree\n" +
+                    " average calculator bolt parallelism degree\n" +
                     " spike detector bolt parallelism degree\n" +
                     " sink parallelism degree\n" +
                     " source generation rate (default -1, generate at the max possible rate)\n" +
