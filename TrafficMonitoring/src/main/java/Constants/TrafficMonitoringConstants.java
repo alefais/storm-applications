@@ -1,7 +1,10 @@
 package Constants;
 
 /**
- * Constants peculiar of the TrafficMonitoring application.
+ *  @author Alessandra Fais
+ *  @version June 2019
+ *
+ *  Constants peculiar of the TrafficMonitoring application.
  */
 public interface TrafficMonitoringConstants extends BaseConstants {
     String DEFAULT_PROPERTIES = "/trafficmonitoring/tm.properties";
