@@ -22,7 +22,10 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /**
- * The topology entry class.
+ *  @author Alessandra Fais
+ *  @version June 2019
+ *
+ *  The topology entry class.
  */
 public class TrafficMonitoring {
 

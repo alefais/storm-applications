@@ -24,10 +24,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This operator receives traces of the vehicles (e.g. through GPS loggers
- * and GPS phones) including latitude, longitude, speed and direction. These
- * values are used to determine the location (regarding a road ID) of
- * the vehicle in real-time.
+ *  @author Alessandra Fais
+ *  @version June 2019
+ *
+ *  This operator receives traces of the vehicles (e.g. through GPS loggers
+ *  and GPS phones) including latitude, longitude, speed and direction. These
+ *  values are used to determine the location (regarding a road ID) of
+ *  the vehicle in real-time.
  */
 public class MapMatchingBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MapMatchingBolt.class);
@@ -60,7 +63,7 @@ public class MapMatchingBolt extends BaseRichBolt {
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
-        LOG.info("[MapMatchingBolt] Started ({} replicas).", par_deg);
+        LOG.info("[MapMatch] Started ({} replicas).", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         processed = 0;               // total number of processed tuples
@@ -95,7 +98,7 @@ public class MapMatchingBolt extends BaseRichBolt {
             throw new RuntimeException("Error while loading shape file");
         }
 
-        LOG.debug("[MapMatchingBolt] Sectors: " + sectors +
+        LOG.debug("[MapMatch] Sectors: " + sectors +
                 " Bounds (" + city + " case): [" +
                 min_lat + ", " + max_lat + "] [" + min_lon + ", " + max_lon + "]");
     }
@@ -109,13 +112,12 @@ public class MapMatchingBolt extends BaseRichBolt {
         int bearing = tuple.getIntegerByField(Field.BEARING);
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
-        LOG.debug("[MapMatchingBolt] Received: " +
-                vehicleID + " " +
-                latitude + " " +
-                longitude + " " +
-                speed + " " +
-                bearing + " " +
-                timestamp);
+        LOG.debug("[MapMatch] tuple: vehicleID " + vehicleID +
+                 ", lat " + latitude +
+                 ", lon " + longitude +
+                 ", speed " + speed +
+                 ", dir " + bearing +
+                 ", ts " + timestamp);
 
         if (speed < 0) return;
         if (longitude > max_lon || longitude < min_lon || latitude > max_lat || latitude < min_lat) return;
@@ -151,10 +153,10 @@ public class MapMatchingBolt extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[MapMatchingBolt] Processed {} tuples in {} ms. " +
-                        "Source bandwidth is {} tuples per second.",
-                processed, t_elapsed,
-                processed / (t_elapsed / 1000));  // tuples per second
+        LOG.info("[MapMatch] execution time: " + t_elapsed +
+                " ms, processed: " + processed +
+                ", bandwidth: " + processed / (t_elapsed / 1000) +  // tuples per second
+                " tuples/s");
 
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter("TMkeys_results.log"));

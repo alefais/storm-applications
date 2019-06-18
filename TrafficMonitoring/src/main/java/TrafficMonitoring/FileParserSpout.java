@@ -18,9 +18,12 @@ import java.util.Map;
 import java.util.Scanner;
 
 /**
- * The spout is in charge of reading the input data file containing
- * vehicle-traces, parsing it and generating the stream of records
- * toward the MapMatchingBolt.
+ *  @author Alessandra Fais
+ *  @version June 2019
+ *
+ *  The spout is in charge of reading the input data file containing
+ *  vehicle-traces, parsing it and generating the stream of records
+ *  toward the MapMatchingBolt.
  */
 public class FileParserSpout extends BaseRichSpout {
 
@@ -70,7 +73,7 @@ public class FileParserSpout extends BaseRichSpout {
 
     @Override
     public void open(Map conf, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
-        LOG.info("[FileParserSpout] Started ({} replicas with rate {}).", par_deg, rate);
+        LOG.info("[Source] Started ({} replicas with rate {}).", par_deg, rate);
 
         t_start = System.nanoTime(); // spout start time in nanoseconds
 
@@ -114,11 +117,11 @@ public class FileParserSpout extends BaseRichSpout {
     public void close() {
         long t_elapsed = (nt_end - t_start) / 1000000;  // elapsed time in milliseconds
 
-        LOG.info("[FileParserSpout] Terminated after {} generations.", nt_execution);
-        LOG.info("[FileParserSpout] Emitted {} tuples in {} ms. " +
-                        "Source bandwidth is {} tuples per second.",
-                generated, t_elapsed,
-                generated / (t_elapsed / 1000));  // tuples per second
+        LOG.info("[Source] execution time: " + t_elapsed +
+                " ms, generations: " + nt_execution +
+                ", generated: " + generated +
+                ", bandwidth: " + generated / (t_elapsed / 1000) +  // tuples per second
+                " tuples/s");
     }
 
     @Override
@@ -156,7 +159,7 @@ public class FileParserSpout extends BaseRichSpout {
                     bearings.add(Integer.valueOf(fields[BeijingParsing.B_DIRECTION_FIELD]));
                     generated++;
 
-                    LOG.debug("[FileParserSpout] Beijing Fields: {} ; {} ; {} ; {} ; {}",
+                    LOG.debug("[Source] Beijing Fields: {} ; {} ; {} ; {} ; {}",
                             fields[BeijingParsing.B_VEHICLE_ID_FIELD],
                             fields[BeijingParsing.B_LATITUDE_FIELD],
                             fields[BeijingParsing.B_LONGITUDE_FIELD],
@@ -181,7 +184,7 @@ public class FileParserSpout extends BaseRichSpout {
                     bearings.add(Integer.valueOf(fields[DublinParsing.D_DIRECTION_FIELD]));
                     generated++;
 
-                    LOG.debug("[FileParserSpout] Dublin Fields: {} ; {} ; {} ; {}",
+                    LOG.debug("[Source] Dublin Fields: {} ; {} ; {} ; {}",
                             fields[DublinParsing.D_VEHICLE_ID_FIELD],
                             fields[DublinParsing.D_LATITUDE_FIELD],
                             fields[DublinParsing.D_LONGITUDE_FIELD],
@@ -189,7 +192,7 @@ public class FileParserSpout extends BaseRichSpout {
                 }
             }
             scan.close();
-            LOG.info("[FileParserSpout] Parsed dataset: generated {} tuples.", generated);
+            LOG.info("[Source] parsed dataset: " + generated + " tuples");
             generated = 0;
         } catch (FileNotFoundException | NullPointerException e) {
             LOG.error("The file {} does not exists", city_tracefile);
@@ -210,6 +213,6 @@ public class FileParserSpout extends BaseRichSpout {
             t_now = System.nanoTime();
             end = (t_now - t_start) >= nsecs;
         }
-        LOG.debug("[FileParserSpout] delay {} ns.", nsecs);
+        LOG.debug("[Source] delay " + nsecs + " ns.");
     }
 }
