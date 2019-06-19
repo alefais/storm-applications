@@ -17,7 +17,6 @@ do
     do
         printf "extract from tests/output_60s/main_$nsource-$npred-1_-1.log\n\n"
 
-        grep "Source" tests/output_60s/main_$nsource-$npred-1_-1.log | awk  -F'[, ]' '{ print $20 }' >> tests/output_60s/bandwidth.txt
-	    grep "Predictor" tests/output_60s/main_$nsource-$npred-1_-1.log | awk  -F'[, ]' '{ print $20 }' >> tests/output_60s/latency.txt
+	    grep "Predictor" tests/output_60s/main_$nsource-$npred-1_-1.log | awk  -F'[, ]' '{ print $20 }' >> tests/output_60s/bandwidth.txt
     done
 done
