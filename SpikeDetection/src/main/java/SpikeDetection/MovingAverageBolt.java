@@ -17,7 +17,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 /**
- *  @author Alessandra Fais
+ *  @author  Alessandra Fais
  *  @version May 2019
  *
  *  The bolt is in charge of computing the average over a window of values.
@@ -74,7 +74,7 @@ public class MovingAverageBolt extends BaseRichBolt {
 
         LOG.debug("[Average] tuple: deviceID " + deviceID +
                     ", incremental_average " + moving_avg_instant +
-                    ", next_value " + next_property_value
+                    ", next_value " + next_property_value +
                     ", ts " + timestamp);
 
         processed++;

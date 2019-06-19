@@ -1,7 +1,7 @@
 package Constants;
 
 /**
- *  @author Alessandra Fais
+ *  @author  Alessandra Fais
  *  @version May 2019
  *
  *  Constants peculiar of the SpikeDetection application.

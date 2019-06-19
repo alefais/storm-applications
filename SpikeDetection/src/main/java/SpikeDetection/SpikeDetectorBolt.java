@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
- *  @author Alessandra Fais
+ *  @author  Alessandra Fais
  *  @version May 2019
  *
  *  The bolt is in charge of detecting spikes in the measurements received by sensors
@@ -63,7 +63,7 @@ public class SpikeDetectorBolt extends BaseRichBolt {
 
         LOG.debug("[Detector] tuple: deviceID " + deviceID +
                     ", incremental_average " + moving_avg_instant +
-                    ", next_value " + next_property_value
+                    ", next_value " + next_property_value +
                     ", ts " + timestamp);
 
         if (Math.abs(next_property_value - moving_avg_instant) > spike_threshold * moving_avg_instant) {

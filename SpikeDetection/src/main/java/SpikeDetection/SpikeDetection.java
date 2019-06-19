@@ -22,7 +22,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /**
- *  @author Alessandra Fais
+ *  @author  Alessandra Fais
  *  @version May 2019
  *
  *  The topology entry class.
