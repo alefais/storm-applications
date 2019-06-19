@@ -17,6 +17,6 @@ do
     do
         printf "extract from tests/output_60s/main_$nsource-$npred-1_-1.log\n\n"
 
-	    grep "Average" tests/output_60s/main_$nsource-$ndet-1-1_-1.log | awk  -F'[, ]' '{ print $20 }' >> tests/output_60s/bandwidth_$nsource.txt
+	    grep "Average" tests/output_60s/main_$nsource-$ndet-1-1_-1.log | awk  -F'[, ]' '{ print $17 }' >> tests/output_60s/bandwidth_$nsource.txt
     done
 done
