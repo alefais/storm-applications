@@ -27,6 +27,6 @@ do
     do
         printf "storm_test --nsource $nsource --npred $npred --nsink 1 --rate -1\n\n"
 
-        storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection $nsource $npred 1 | tee tests/output_60s/main_$nsource-$npred-1_-1.log
+        storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection data/credit-card.dat $nsource $npred 1 | tee tests/output_60s/main_$nsource-$npred-1_-1.log
     done
 done
