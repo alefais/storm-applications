@@ -8,8 +8,8 @@
 if [ ! -d tests ]; then
     mkdir tests
 fi
-if [ ! -d tests/output_60s_light_bounded ]; then
-    mkdir tests/output_60s_light_bounded
+if [ ! -d tests/output_60s ]; then
+    mkdir tests/output_60s
 fi
 
 #################################################### run tests #########################################################
