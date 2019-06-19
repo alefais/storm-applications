@@ -15,7 +15,10 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
- * The sink is in charge of printing the results.
+ *  @author  Alessandra Fais
+ *  @version June 2019
+ *
+ *  Sink node that receives and prints the results.
  */
 public class ConsoleSink extends BaseRichBolt {
 
@@ -41,7 +44,7 @@ public class ConsoleSink extends BaseRichBolt {
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
-        LOG.info("[ConsoleSink] Started ({} replicas).", par_deg);
+        LOG.info("[Sink] started ({} replicas)", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         bytes = 0;                   // total number of processed bytes
@@ -57,7 +60,7 @@ public class ConsoleSink extends BaseRichBolt {
         long count = tuple.getLongByField(Field.COUNT);
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
-        LOG.debug("[ConsoleSink] Received `" +
+        LOG.debug("[Sink] Received `" +
                 word + "` occurred " +
                 count + " times since now.");
 
@@ -75,14 +78,14 @@ public class ConsoleSink extends BaseRichBolt {
     @Override
     public void cleanup() {
         if (bytes == 0) {
-            LOG.info("[ConsoleSink] No words received.");
+            LOG.info("[Sink] processed MB: " + bytes);
         } else {
             if (gen_rate == -1) {  // evaluate bandwidth
                 long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-                LOG.info("[ConsoleSink] Processed " + (bytes / 1048576) + " in " + t_elapsed + " ms.");
-                LOG.info("[ConsoleSink] Bandwidth is " +
-                        (bytes / 1048576) / (t_elapsed / 1000) + " MB per second.");
+                LOG.info("[Sink] processed MB: " + (bytes / 1048576) +
+                         ", bandwidth: " +  (bytes / 1048576) / (t_elapsed / 1000) +
+                         " MB/second.");
             } else {  // evaluate latency
                 long acc = 0L;
                 for (Long tl : tuple_latencies) {
@@ -90,7 +93,9 @@ public class ConsoleSink extends BaseRichBolt {
                 }
                 double avg_latency = (double) acc / tuple_latencies.size(); // average latency in nanoseconds
 
-                LOG.info("[ConsoleSink] Average latency: {} ms.", avg_latency / 1000000); // average latency in milliseconds
+                LOG.info("[Sink] processed MB: " + (bytes / 1048576) +
+                         ", latency: " +  avg_latency / 1000000 + // average latency in milliseconds
+                         " ms");
             }
         }
     }

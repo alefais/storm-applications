@@ -1,7 +1,10 @@
 package Constants;
 
 /**
- * Constants peculiar of the WordCount application.
+ *  @author  Alessandra Fais
+ *  @version June 2019
+ *
+ *  Constants peculiar of the WordCount application.
  */
 public interface WordCountConstants extends BaseConstants {
     String DEFAULT_PROPERTIES = "/wordcount/wc.properties";

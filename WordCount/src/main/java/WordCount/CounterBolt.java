@@ -17,7 +17,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Counts words' occurrences.
+ *  @author  Alessandra Fais
+ *  @version June 2019
+ *
+ *  Counts words' occurrences.
  */
 public class CounterBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(CounterBolt.class);
@@ -39,7 +42,7 @@ public class CounterBolt extends BaseRichBolt {
 
     @Override
     public void prepare(Map stormConf, TopologyContext topologyContext, OutputCollector outputCollector) {
-        LOG.info("[CounterBolt] Started ({} replicas).", par_deg);
+        LOG.info("[Counter] started ({} replicas)", par_deg);
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         bytes = 0;                   // total number of processed bytes
@@ -71,9 +74,10 @@ public class CounterBolt extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[CounterBolt] Processed " + (bytes / 1048576) + " in " + t_elapsed + " ms.");
-        LOG.info("[CounterBolt] Bandwidth is " +
-                (bytes / 1048576) / (t_elapsed / 1000) + " MB per second.");
+        LOG.info("[Predictor] execution time: " + t_elapsed +
+                " ms, processed: " + (bytes / 1048576) +
+                " MB, bandwidth: " + (bytes / 1048576) / (t_elapsed / 1000) +  // MB per second
+                " MB/s");
     }
 
     @Override
