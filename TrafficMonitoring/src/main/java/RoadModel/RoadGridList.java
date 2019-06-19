@@ -25,7 +25,7 @@ import java.util.Map;
  *  The class defines a data structure containing information about the roads layer extracted from the shapefile.
  */
 public class RoadGridList {
-    private HashMap<String, ArrayList<SimpleFeature>> gridList;
+    private HashMap<String, ArrayList<SimpleFeature>> gridList = new HashMap<>();
     private String idKey;
     private String widthKey;
 
