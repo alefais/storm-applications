@@ -1,24 +1,34 @@
 #!/usr/bin/env bash
 
-# Storm tests bandwidth
+# @author   Alessandra Fais
+# @date     18/06/2019
 
-storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 1 1 1 | tee ./output_fd60s/main_111-1.log
-storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 1 2 1 | tee ./output_fd60s/main_121-1.log
-storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 1 4 1 | tee ./output_fd60s/main_141-1.log
-storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 1 8 1 | tee ./output_fd60s/main_181-1.log
-storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 1 14 1 | tee ./output_fd60s/main_1141-1.log
+############################################## create test directories #################################################
 
-storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 2 4 1 | tee ./output_fd60s/main_241-1.log
-storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 2 8 1 | tee ./output_fd60s/main_281-1.log
-storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 2 13 1 | tee ./output_fd60s/main_2131-1.log
+if [ ! -d tests ]; then
+    mkdir tests
+fi
+if [ ! -d tests/output_60s_light_bounded ]; then
+    mkdir tests/output_60s_light_bounded
+fi
 
-storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 4 8 1 | tee ./output_fd60s/main_481-1.log
-storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 4 11 1 | tee ./output_fd60s/main_4111-1.log
-storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 5 10 1 | tee ./output_fd60s/main_5101-1.log
+#################################################### run tests #########################################################
 
-#storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 6 10 1 | tee ./output_fd60s/main_6101-1.log
-#storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 8 15 1 | tee ./output_fd60s/main_8151-1.log
-#storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 11 20 1 | tee ./output_fd60s/main_11201-1.log
-#storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 12 19 1 | tee ./output_fd60s/main_12191-1.log
-#storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 13 18 1 | tee ./output_fd60s/main_13181-1.log
-#storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection ../../data/app/fd/credit-card.dat 14 17 1 | tee ./output_fd60s/main_14171-1.log
+cd bin
+
+printf "Running Storm tests with rate -1\n"
+
+NCORES=16
+NTHREADS=32
+
+NSOURCE_MAX=5
+for nsource in $(seq 1 $NSOURCE_MAX);
+do
+    NPRED_MAX=$((NTHREADS-nsource-1))
+    for npred in $(seq 1 $NPRED_MAX);
+    do
+        printf "storm_test --nsource $nsource --npred $npred --nsink 1 --rate -1\n\n"
+
+        storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection $nsource $npred 1 | tee tests/output_60s/main_$nsource-$npred-1_-1.log
+    done
+done
