@@ -78,7 +78,7 @@ public class SplitterBolt extends BaseRichBolt {
         LOG.info("[Splitter] execution time: " + t_elapsed +
                 " ms, processed: " + (bytes / 1048576) +
                 " MB, bandwidth: " + (bytes / 1048576) / (t_elapsed / 1000) +  // MB per second
-                " MB/s");
+                " (MB/s) " + bytes / (t_elapsed / 1000) + " bytes/s");         // bytes per second
     }
 
     @Override

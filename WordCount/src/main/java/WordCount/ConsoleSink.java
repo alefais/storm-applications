@@ -84,8 +84,8 @@ public class ConsoleSink extends BaseRichBolt {
                 long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
                 LOG.info("[Sink] processed MB: " + (bytes / 1048576) +
-                         ", bandwidth: " +  (bytes / 1048576) / (t_elapsed / 1000) +
-                         " MB/second.");
+                         ", bandwidth: " +  (bytes / 1048576) / (t_elapsed / 1000) +    // MB per second
+                         " (MB/s) " + bytes / (t_elapsed / 1000) + " bytes/s");         // bytes per second
             } else {  // evaluate latency
                 long acc = 0L;
                 for (Long tl : tuple_latencies) {
