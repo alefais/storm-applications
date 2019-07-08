@@ -19,7 +19,7 @@ printf "Running Storm tests with rate -1\n"
 NCORES=16
 NTHREADS=32
 
-NSOURCE_MAX=10
+NSOURCE_MAX=1
 for nsource in $(seq 1 $NSOURCE_MAX);
 do
     NMATCH_MAX=$((NTHREADS-3))
