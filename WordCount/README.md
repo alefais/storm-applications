@@ -11,7 +11,7 @@ WordCount application can be run passing some arguments (if no command line argu
 ### Execution examples:
 * Run the application with no arguments (parameters such as the input dataset and the parallelism degree of the nodes assume the default values, the source generation rate is the maximum possible, the execution is local): <br> `storm jar target/WordCount-1.0-SNAPSHOT-jar-with-dependencies.jar WordCount.WordCount`
 
-* Run the application explicitly defining the dataset file path and the parallelism degree for all the nodes in the topology (source: 1, bolt1: 2, bolt2: 2, sink: 1) <br> (<b>NB:</b> for each unspecified parameter the default value is used, as in the previous case): <br> `storm jar target/WordCount-1.0-SNAPSHOT-jar-with-dependencies.jar WordCount.WordCount file data/books.dat 1 2 2 1`
+* Run the application explicitly defining the dataset file path and the parallelism degree for all the nodes in the topology (source: 1, splitter: 2, counter: 2, sink: 1) <br> (<b>NB:</b> for each unspecified parameter the default value is used, as in the previous case): <br> `storm jar target/WordCount-1.0-SNAPSHOT-jar-with-dependencies.jar WordCount.WordCount file data/book.dat 1 2 2 1`
 
 <b>NB:</b> Running the application as `storm jar target/WordCount-1.0-SNAPSHOT-jar-with-dependencies.jar WordCount.WordCount help` visualizes all the parameter options.
 
