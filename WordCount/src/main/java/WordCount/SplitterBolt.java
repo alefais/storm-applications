@@ -82,7 +82,7 @@ public class SplitterBolt extends BaseRichBolt {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
         double mbs = (double)(bytes / 1048576) / (double)(t_elapsed / 1000);
-        String formatted_mbs = String.format("%.4f", mbs);
+        String formatted_mbs = String.format("%.5f", mbs);
 
         LOG.info("[Splitter] execution time: " + t_elapsed + " ms, " +
                  "processed: " + line_count + " (lines) "
