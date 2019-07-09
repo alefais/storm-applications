@@ -20,7 +20,7 @@ import java.util.Scanner;
 
 /**
  *  @author  Alessandra Fais
- *  @version June 2019
+ *  @version July 2019
  *
  *  The spout is in charge of reading the input data file containing
  *  words, parsing it and generating a stream of lines toward the
@@ -63,10 +63,10 @@ public class FileParserSpout extends BaseRichSpout {
     FileParserSpout(String source_type, String file, int gen_rate, int p_deg) {
         type = source_type;
         file_path = file;
-        rate = gen_rate * 1048576;  // number of bytes per second
+        rate = gen_rate;            // number of tuples per second
         par_deg = p_deg;            // spout parallelism degree
         generated = 0;              // total number of generated tuples
-        emitted = 0;                // number of emitted data measured in bytes
+        emitted = 0;                // number of emitted tuples
         nt_execution = 0;           // number of executions of nextTuple() method
 
         lines = new ArrayList<>();
@@ -99,7 +99,7 @@ public class FileParserSpout extends BaseRichSpout {
         for (int i = 0; i < lines.size(); i++) {
             if (rate == -1) {       // at the maximum possible rate
                 collector.emit(new Values(lines.get(i), System.nanoTime()));
-                bytes += lines.get(i).length();
+                bytes += lines.get(i).getBytes().length;
                 generated++;
             } else {                // at the given rate
                 long t_now = System.nanoTime();
@@ -110,8 +110,8 @@ public class FileParserSpout extends BaseRichSpout {
                     t_init = System.nanoTime();
                 }
                 collector.emit(new Values(lines.get(i), System.nanoTime()));
-                bytes += lines.get(i).length();
-                emitted += lines.get(i).length();
+                bytes += lines.get(i).getBytes().length;
+                emitted++;
                 generated++;
                 active_delay((double) interval / rate);
             }
@@ -124,12 +124,14 @@ public class FileParserSpout extends BaseRichSpout {
     public void close() {
         long t_elapsed = (nt_end - t_start) / 1000000;  // elapsed time in milliseconds
 
+        double mbs = (double)(bytes / 1048576) / (double)(t_elapsed / 1000);
+        String formatted_mbs = String.format("%.4f", mbs);
+
         LOG.info("[Source] execution time: " + t_elapsed +
                  " ms, generations: " + nt_execution +
                  ", generated: " + generated + " (lines) " + (bytes / 1048576) +
-                 " (MB), bandwidth: " + generated / (t_elapsed / 1000) +  // lines per second
-                 " (lines/s) " + (bytes / 1048576) / (t_elapsed / 1000) +  // express bytes/s in MB/s
-                 " (MB/s).");
+                 " (MB), bandwidth: " + generated / (t_elapsed / 1000) +
+                 " (lines/s) " + formatted_mbs + " (MB/s).");
     }
 
     @Override

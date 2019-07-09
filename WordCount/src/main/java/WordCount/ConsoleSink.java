@@ -73,7 +73,7 @@ public class ConsoleSink extends BaseRichBolt {
         }
         collector.ack(tuple);
 
-        bytes += word.length();
+        bytes += word.getBytes().length;
         words++;
         t_end = System.nanoTime();
     }
@@ -81,26 +81,25 @@ public class ConsoleSink extends BaseRichBolt {
     @Override
     public void cleanup() {
         if (bytes == 0) {
-            LOG.info("[Sink] processed: " + bytes + " (MB) " + words + " (words)");
+            LOG.info("[Sink] processed: " + bytes + " (bytes) " + words + " (words)");
         } else {
-            if (gen_rate == -1) {  // evaluate bandwidth
-                long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
-
-                LOG.info("[Sink] processed: " + (bytes / 1048576) + " (MB) " + words + " (words)" +
-                         ", bandwidth: " +  (bytes / 1048576) / (t_elapsed / 1000) +   // MB per second
-                         " (MB/s) " + bytes / (t_elapsed / 1000) +                     // bytes per second
-                         " (bytes/s)" + words + " (words/s)");                         // words per second
-            } else {  // evaluate latency
-                long acc = 0L;
-                for (Long tl : tuple_latencies) {
-                    acc += tl;
-                }
-                double avg_latency = (double) acc / tuple_latencies.size(); // average latency in nanoseconds
-
-                LOG.info("[Sink] processed: " + (bytes / 1048576) + " (MB) " + words + " (words)" +
-                         ", latency: " +  avg_latency / 1000000 + // average latency in milliseconds
-                         " ms");
+            // evaluate both latency and bandwidth
+            long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
+            long acc = 0L;
+            for (Long tl : tuple_latencies) {
+                acc += tl;
             }
+            double avg_latency = ((double) acc / tuple_latencies.size()) / 1000000; // average latency in ms
+            String formatted_latency = String.format("%.4f", avg_latency);
+
+            double mbs = (double)(bytes / 1048576) / (double)(t_elapsed / 1000);
+            String formatted_mbs = String.format("%.4f", mbs);
+
+            LOG.info("[Sink] processed: " + words + " (words) " + (bytes / 1048576) + " (MB), " +
+                    "bandwidth: " + words / (t_elapsed / 1000) + " (words/s) "
+                    + formatted_mbs + " (MB/s) "
+                    + bytes / (t_elapsed / 1000) + " (bytes/s), " +
+                    "latency: " + formatted_latency + " ms.");
         }
     }
 

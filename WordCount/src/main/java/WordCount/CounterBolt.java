@@ -18,7 +18,7 @@ import java.util.Map;
 
 /**
  *  @author  Alessandra Fais
- *  @version June 2019
+ *  @version July 2019
  *
  *  Counts words' occurrences.
  */
@@ -35,6 +35,7 @@ public class CounterBolt extends BaseRichBolt {
     private long t_end;
     private int par_deg;
     private long bytes;
+    private long words;
 
     CounterBolt(int p_deg) {
         par_deg = p_deg;     // bolt parallelism degree
@@ -46,6 +47,7 @@ public class CounterBolt extends BaseRichBolt {
 
         t_start = System.nanoTime(); // bolt start time in nanoseconds
         bytes = 0;                   // total number of processed bytes
+        words = 0;                   // total number of processed words
 
         config = Configuration.fromMap(stormConf);
         context = topologyContext;
@@ -58,7 +60,8 @@ public class CounterBolt extends BaseRichBolt {
         long timestamp = tuple.getLongByField(Field.TIMESTAMP);
 
         if (word != null) {
-            bytes += word.length();
+            bytes += word.getBytes().length;
+            words++;
 
             MutableLong count = counts.computeIfAbsent(word, k -> new MutableLong(0));
             count.increment();
@@ -74,10 +77,14 @@ public class CounterBolt extends BaseRichBolt {
     public void cleanup() {
         long t_elapsed = (t_end - t_start) / 1000000; // elapsed time in milliseconds
 
-        LOG.info("[Predictor] execution time: " + t_elapsed +
-                " ms, processed: " + (bytes / 1048576) +
-                " MB, bandwidth: " + (bytes / 1048576) / (t_elapsed / 1000) +  // MB per second
-                " (MB/s) " + bytes / (t_elapsed / 1000) + " bytes/s");         // bytes per second
+        double mbs = (double)(bytes / 1048576) / (double)(t_elapsed / 1000);
+        String formatted_mbs = String.format("%.4f", mbs);
+
+        LOG.info("[Counter] execution time: " + t_elapsed + " ms, " +
+                "processed: " + words + " (words) " + (bytes / 1048576) + " (MB), " +
+                "bandwidth: " + words / (t_elapsed / 1000) + " (words/s) "
+                              + formatted_mbs + " (MB/s) "
+                              + bytes / (t_elapsed / 1000) + " (bytes/s)");
     }
 
     @Override
