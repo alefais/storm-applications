@@ -14,19 +14,17 @@ fi
 
 #################################################### run tests #########################################################
 
-printf "Running Storm tests with rate 100000\n"
+printf "Running Storm tests for WordCount application\n"
 
-NCORES=16
 NTHREADS=32
-
 NSOURCE_MAX=4
 for nsource in $(seq 1 $NSOURCE_MAX);
 do
     NSPLIT_MAX=$((NTHREADS-nsource-nsource-1))
     for nsplit in $(seq 1 $NSPLIT_MAX);
     do
-        printf "storm_test --nsource $nsource --nsplitter $nsource --ncounter $nsplit --nsink 1 --rate 100000\n\n"
+        printf "storm_wordcount --nsource $nsource --nsplitter $nsplit --ncounter $nsource --nsink 1 --rate 10000\n\n"
 
-        timeout 10m storm jar target/WordCount-1.0-SNAPSHOT-jar-with-dependencies.jar WordCount.WordCount data/books.dat $nsource $nsource $nsplit 1 100000 > tests/output_60s/main_$nsource-$nsource-$nsplit-1_100000.log
+        storm jar target/WordCount-1.0-SNAPSHOT-jar-with-dependencies.jar WordCount.WordCount file data/book.dat $nsource $nsource $nsplit 1 10000 > tests/output_60s/main_$nsource-$nsplit-$nsource-1_10000.log
     done
 done
