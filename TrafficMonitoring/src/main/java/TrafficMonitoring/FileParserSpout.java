@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 /**
- *  @author Alessandra Fais
+ *  @author  Alessandra Fais
  *  @version June 2019
  *
  *  The spout is in charge of reading the input data file containing

@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *  @author Alessandra Fais
- *  @version June 2019
+ *  @author  Alessandra Fais
+ *  @version July 2019
  *
  *  This operator receives traces of the vehicles (e.g. through GPS loggers
  *  and GPS phones) including latitude, longitude, speed and direction. These
@@ -159,7 +159,7 @@ public class MapMatchingBolt extends BaseRichBolt {
                 " tuples/s");
 
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter("TMkeys_results.log"));
+            BufferedWriter bw = new BufferedWriter(new FileWriter("TMkeys_results_" + city + ".log"));
             bw.write(printKeysStatistics());
             bw.close();
         } catch (IOException e) {

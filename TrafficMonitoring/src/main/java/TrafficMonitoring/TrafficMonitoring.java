@@ -22,8 +22,8 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /**
- *  @author Alessandra Fais
- *  @version June 2019
+ *  @author  Alessandra Fais
+ *  @version July 2019
  *
  *  The topology entry class.
  */
@@ -67,10 +67,10 @@ public class TrafficMonitoring {
             int source_par_deg = (args.length > 1) ?
                     Integer.parseInt(args[1]) :
                     ((Configuration) conf).getInt(Conf.SPOUT_THREADS);
-            int bolt1_par_deg = (args.length > 2) ?
+            int map_match_par_deg = (args.length > 2) ?
                     Integer.parseInt(args[2]) :
                     ((Configuration) conf).getInt(Conf.MAP_MATCHER_THREADS);
-            int bolt2_par_deg = (args.length > 3) ?
+            int calculator_par_deg = (args.length > 3) ?
                     Integer.parseInt(args[3]) :
                     ((Configuration) conf).getInt(Conf.SPEED_CALCULATOR_THREADS);
             int sink_par_deg = (args.length > 4) ?
@@ -90,13 +90,13 @@ public class TrafficMonitoring {
                     source_par_deg);
 
             builder.setBolt(Component.MAP_MATCHER,
-                    new MapMatchingBolt(city, bolt1_par_deg),
-                    bolt1_par_deg)
+                    new MapMatchingBolt(city, map_match_par_deg),
+                    map_match_par_deg)
                     .shuffleGrouping(Component.SPOUT);
 
             builder.setBolt(Component.SPEED_CALCULATOR,
-                    new SpeedCalculatorBolt(bolt2_par_deg),
-                    bolt2_par_deg)
+                    new SpeedCalculatorBolt(calculator_par_deg),
+                    calculator_par_deg)
                     .fieldsGrouping(Component.MAP_MATCHER, new Fields(Field.ROAD_ID));
 
             builder.setBolt(Component.SINK,
@@ -106,6 +106,16 @@ public class TrafficMonitoring {
 
             // build the topology
             StormTopology topology = builder.createTopology();
+
+            // print app info
+            LOG.info("[SUMMARY] Executing TrafficMonitoring with parameters:\n" +
+                    "* city: " + city + "\n" +
+                    "* source parallelism degree: " + source_par_deg + "\n" +
+                    "* map-match parallelism degree: " + map_match_par_deg + "\n" +
+                    "* calculator parallelism degree: " + calculator_par_deg + "\n" +
+                    "* sink parallelism degree: " + sink_par_deg + "\n" +
+                    "* rate: " + gen_rate + "\n" +
+                    "Topology: source -> map-matcher -> speed-calculator -> sink");
 
             // run the topology
             try {
