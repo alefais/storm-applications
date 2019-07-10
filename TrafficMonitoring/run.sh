@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # @author   Alessandra Fais
-# @date     18/06/2019
+# @date     July 2019
 
 ############################################## create test directories #################################################
 
@@ -14,11 +14,9 @@ fi
 
 #################################################### run tests #########################################################
 
-printf "Running Storm tests with rate -1\n"
+printf "Running Storm tests for TrafficMonitoring application\n"
 
-NCORES=16
 NTHREADS=32
-
 NSOURCE_MAX=1
 for nsource in $(seq 1 $NSOURCE_MAX);
 do
@@ -26,8 +24,8 @@ do
     RATE=$((nsource*1000))
     for nmatch in $(seq 1 $NMATCH_MAX);
     do
-        printf "storm_test --nsource 1 --nmatcher $nmatch --ncalculator 1 --nsink 1 --rate $RATE\n\n"
+        printf "storm_trafficmonitoring --nsource 1 --nmatcher $nmatch --ncalculator 1 --nsink 1 --rate $RATE\n\n"
 
-        storm jar target/TrafficMonitoring-1.0-SNAPSHOT-jar-with-dependencies.jar TrafficMonitoring.TrafficMonitoring beijing 1 $nmatch 1 1 $RATE | tee tests/output_60s/main_1-$nmatch-1-1_$RATE.log
+        storm jar target/TrafficMonitoring-1.0-SNAPSHOT-jar-with-dependencies.jar TrafficMonitoring.TrafficMonitoring beijing 1 $nmatch 1 1 $RATE > tests/output_60s/main_1-$nmatch-1-1_$RATE.log
     done
 done
