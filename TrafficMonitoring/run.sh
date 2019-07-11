@@ -26,6 +26,14 @@ do
     do
         printf "storm_trafficmonitoring --nsource 1 --nmatcher $nmatch --ncalculator 1 --nsink 1 --rate $RATE\n\n"
 
-        storm jar target/TrafficMonitoring-1.0-SNAPSHOT-jar-with-dependencies.jar TrafficMonitoring.TrafficMonitoring beijing 1 $nmatch 1 1 $RATE > tests/output_60s/main_1-$nmatch-1-1_$RATE.log
+        if [ $nmatch -lt 4 ]
+        then
+            timeout 30 storm jar target/TrafficMonitoring-1.0-SNAPSHOT-jar-with-dependencies.jar TrafficMonitoring.TrafficMonitoring beijing 1 $nmatch 1 1 $RATE > tests/output_60s/main_1-$nmatch-1-1_$RATE.log
+        elif [ $nmatch -lt 10 ]
+        then
+            timeout 10 storm jar target/TrafficMonitoring-1.0-SNAPSHOT-jar-with-dependencies.jar TrafficMonitoring.TrafficMonitoring beijing 1 $nmatch 1 1 $RATE > tests/output_60s/main_1-$nmatch-1-1_$RATE.log
+        else
+            timeout 5 storm jar target/TrafficMonitoring-1.0-SNAPSHOT-jar-with-dependencies.jar TrafficMonitoring.TrafficMonitoring beijing 1 $nmatch 1 1 $RATE > tests/output_60s/main_1-$nmatch-1-1_$RATE.log
+        fi
     done
 done
