@@ -16,14 +16,13 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
 /**
  *  @author  Alessandra Fais
- *  @version May 2019
+ *  @version July 2019
  *
  *  The topology entry class.
  */
@@ -68,10 +67,10 @@ public class SpikeDetection {
             int source_par_deg = (args.length > 1) ?
                     Integer.parseInt(args[1]) :
                     ((Configuration) conf).getInt(Conf.SPOUT_THREADS);
-            int bolt1_par_deg = (args.length > 2) ?
+            int average_par_deg = (args.length > 2) ?
                     Integer.parseInt(args[2]) :
                     ((Configuration) conf).getInt(Conf.MOVING_AVERAGE_THREADS);
-            int bolt2_par_deg = (args.length > 3) ?
+            int detector_par_deg = (args.length > 3) ?
                     Integer.parseInt(args[3]) :
                     ((Configuration) conf).getInt(Conf.SPIKE_DETECTOR_THREADS);
             int sink_par_deg = (args.length > 4) ?
@@ -91,13 +90,13 @@ public class SpikeDetection {
                     source_par_deg);
 
             builder.setBolt(Component.MOVING_AVERAGE,
-                    new MovingAverageBolt(bolt1_par_deg),
-                    bolt1_par_deg)
+                    new MovingAverageBolt(average_par_deg),
+                    average_par_deg)
                     .fieldsGrouping(Component.SPOUT, new Fields(Field.DEVICE_ID));
 
             builder.setBolt(Component.SPIKE_DETECTOR,
-                    new SpikeDetectorBolt(bolt2_par_deg),
-                    bolt2_par_deg)
+                    new SpikeDetectorBolt(detector_par_deg),
+                    detector_par_deg)
                     .shuffleGrouping(Component.MOVING_AVERAGE);
 
             builder.setBolt(Component.SINK,
@@ -107,6 +106,16 @@ public class SpikeDetection {
 
             // build the topology
             StormTopology topology = builder.createTopology();
+
+            // print app info
+            LOG.info("[SUMMARY] Executing SpikeDetection with parameters:\n" +
+                    "* file: " + file_path + "\n" +
+                    "* source parallelism degree: " + source_par_deg + "\n" +
+                    "* moving-average parallelism degree: " + average_par_deg + "\n" +
+                    "* detector parallelism degree: " + detector_par_deg + "\n" +
+                    "* sink parallelism degree: " + sink_par_deg + "\n" +
+                    "* rate: " + gen_rate + "\n" +
+                    "Topology: source -> moving-average -> detector -> sink");
 
             // run the topology
             try {
