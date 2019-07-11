@@ -18,13 +18,19 @@ printf "Running Storm tests for WordCount application\n"
 
 NTHREADS=32
 NSOURCE_MAX=4
+NSPLIT_MAX=8
+NCOUNT_MAX=8
 for nsource in $(seq 1 $NSOURCE_MAX);
 do
-    NSPLIT_MAX=$((NTHREADS-nsource-nsource-1))
-    for nsplit in $(seq 1 $NSPLIT_MAX);
+    # NSPLIT_MAX=$((NTHREADS-nsource-nsource-1))
+    for nsplit in $(seq $nsource $NSPLIT_MAX);
     do
-        printf "storm_wordcount --nsource $nsource --nsplitter $nsplit --ncounter $nsource --nsink 1 --rate 10000\n\n"
+        for ncount in $(seq $nsplit $NCOUNT_MAX);
+        do
+            printf "storm_wordcount --nsource $nsource --nsplitter $nsplit --ncounter $ncount --nsink 1 --rate 10000\n\n"
 
-        storm jar target/WordCount-1.0-SNAPSHOT-jar-with-dependencies.jar WordCount.WordCount file data/book.dat $nsource $nsource $nsplit 1 10000 > tests/output_60s/main_$nsource-$nsplit-$nsource-1_10000.log
+            # timeout 10 storm jar target/WordCount-1.0-SNAPSHOT-jar-with-dependencies.jar WordCount.WordCount file data/book.dat $nsource $nsource $nsplit 1 10000 > tests/output_60s/main_$nsource-$nsplit-$nsource-1_10000.log
+            storm jar target/WordCount-1.0-SNAPSHOT-jar-with-dependencies.jar WordCount.WordCount file data/book.dat $nsource $nsplit $ncount 1 10000 > tests/output_60s/main_$nsource-$nsplit-$ncount-1_10000.log
+        done
     done
 done
