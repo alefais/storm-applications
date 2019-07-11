@@ -21,10 +21,17 @@ NSOURCE_MAX=4
 for nsource in $(seq 1 $NSOURCE_MAX);
 do
     NPRED_MAX=$((NTHREADS-nsource-1))
-    for npred in $(seq 1 $NPRED_MAX);
+    for npred in {0..$NPRED_MAX..2};
     do
-        printf "storm_frauddetection --nsource $nsource --npred $npred --nsink 1 --rate -1\n\n"
+        if [ $npred -eq 0 ];
+        then
+            printf "storm_frauddetection --nsource $nsource --npred 1 --nsink 1 --rate -1\n\n"
 
-        storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection data/credit-card.dat $nsource $npred 1 | tee tests/output_60s/main_$nsource-$npred-1_-1.log
+            storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection data/credit-card.dat $nsource 1 1 | tee tests/output_60s/main_$nsource-1-1_-1.log
+        else
+            printf "storm_frauddetection --nsource $nsource --npred $npred --nsink 1 --rate -1\n\n"
+
+            storm jar target/FraudDetection-1.0-SNAPSHOT-jar-with-dependencies.jar FraudDetection.FraudDetection data/credit-card.dat $nsource $npred 1 | tee tests/output_60s/main_$nsource-$npred-1_-1.log
+        fi
     done
 done
