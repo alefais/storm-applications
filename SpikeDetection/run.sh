@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # @author   Alessandra Fais
-# @date     18/06/2019
+# @date     July 2019
 
 ############################################## create test directories #################################################
 
@@ -14,19 +14,24 @@ fi
 
 #################################################### run tests #########################################################
 
-printf "Running Storm tests for SpikeDetection with rate -1\n"
+printf "Running Storm tests for SpikeDetection application\n"
 
-NCORES=16
 NTHREADS=32
-
-NSOURCE_MAX=8
+NSOURCE_MAX=4
 for nsource in $(seq 1 $NSOURCE_MAX);
 do
     NAVG_MAX=$((NTHREADS-nsource-2))
-    for navg in $(seq 1 $NAVG_MAX);
+    for navg in {0..$NAVG_MAX..2};
     do
-        printf "storm_test --nsource $nsource --naverage $navg --ndet 1 --nsink 1 --rate -1\n\n"
+        if [ $navg -eq 0 ];
+        then
+            printf "storm_spikedetection --nsource $nsource --naverage 1 --ndetector 1 --nsink 1 --rate -1\n\n"
 
-        storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource $navg 1 1 | tee tests/output_60s/main_$nsource-$navg-1-1_-1.log
+            storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource 1 1 1 | tee tests/output_60s/main_$nsource-1-1-1_-1.log
+        else
+            printf "storm_spikedetection --nsource $nsource --naverage $navg --ndetector 1 --nsink 1 --rate -1\n\n"
+
+            storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource $navg 1 1 | tee tests/output_60s/main_$nsource-$navg-1-1_-1.log
+        fi
     done
 done
