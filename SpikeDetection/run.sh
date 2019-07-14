@@ -50,15 +50,21 @@ do
             else
                 timeout 10m storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource $navg 1 1 > tests/output_60s/main_$nsource-$navg-1-1_-1.log
             fi
-        else
-            printf "${BLUE}storm_spikedetection --nsource $nsource --naverage 29 --ndetector 1 --nsink 1 --rate -1\n\n${NORMAL}"
 
-            if [ $nsource -le 2 ];
-            then
-                storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource 29 1 1 > tests/output_60s/main_$nsource-29-1-1_-1.log
-            else
-                timeout 10m storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource 29 1 1 > tests/output_60s/main_$nsource-29-1-1_-1.log
-            fi
+            for ndet in {2..8..2};
+            do
+                if [ $navg -le $((NTHREADS-nsource-ndet-1)) ];
+                then
+                    printf "${BLUE}storm_spikedetection --nsource $nsource --naverage $navg --ndetector $ndet --nsink 1 --rate -1\n\n${NORMAL}"
+
+                    if [ $nsource -le 2 ];
+                    then
+                        storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource $navg $ndet 1 > tests/output_60s/main_$nsource-$navg-$ndet-1_-1.log
+                    else
+                        timeout 10m storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource $navg $ndet 1 > tests/output_60s/main_$nsource-$navg-$ndet-1_-1.log
+                    fi
+                fi
+            done
         fi
     done
 done
