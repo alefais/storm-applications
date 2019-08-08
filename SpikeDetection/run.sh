@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # @author   Alessandra Fais
-# @date     July 2019
+# @date     August 2019
 
 ############################################## create test directories #################################################
 
@@ -28,7 +28,7 @@ NSOURCE_MAX=4
 for nsource in $(seq 1 $NSOURCE_MAX);
 do
     NAVG_MAX=$((NTHREADS-nsource-2))
-    for navg in {0..29..2};
+    for navg in {0..29..4};
     do
         if [ $navg -eq 0 ];
         then
@@ -37,8 +37,14 @@ do
             if [ $nsource -le 2 ];
             then
                 storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource 1 1 1 > tests/output_60s/main_$nsource-1-1-1_-1.log
+                storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource 2 1 1 > tests/output_60s/main_$nsource-2-1-1_-1.log
+                storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource 2 2 1 > tests/output_60s/main_$nsource-2-2-1_-1.log
+                storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource 2 4 1 > tests/output_60s/main_$nsource-2-4-1_-1.log
             else
                 timeout 10m storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource 1 1 1 > tests/output_60s/main_$nsource-1-1-1_-1.log
+                timeout 10m storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource 2 1 1 > tests/output_60s/main_$nsource-2-1-1_-1.log
+                timeout 10m storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource 2 2 1 > tests/output_60s/main_$nsource-2-2-1_-1.log
+                timeout 10m storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource 2 4 1 > tests/output_60s/main_$nsource-2-4-1_-1.log
             fi
         elif [ $navg -le $NAVG_MAX ];
         then
@@ -51,7 +57,7 @@ do
                 timeout 10m storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource $navg 1 1 > tests/output_60s/main_$nsource-$navg-1-1_-1.log
             fi
 
-            for ndet in {2..8..2};
+            for ndet in {2..4..2};
             do
                 if [ $navg -le $((NTHREADS-nsource-ndet-1)) ];
                 then
