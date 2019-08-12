@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # @author   Alessandra Fais
-# @date     July 2019
+# @date     August 2019
 
 ############################################## create test directories #################################################
 
@@ -35,7 +35,7 @@ do
         then
             printf "${BLUE}storm_trafficmonitoring --nsource 1 --nmatcher 1 --ncalculator 1 --nsink 1 --rate $RATE\n\n${NORMAL}"
 
-            timeout 30m storm jar target/TrafficMonitoring-1.0-SNAPSHOT-jar-with-dependencies.jar TrafficMonitoring.TrafficMonitoring beijing 1 1 1 1 $RATE > tests/output_60s/main_1-1-1-1_$RATE.log
+            timeout 20m storm jar target/TrafficMonitoring-1.0-SNAPSHOT-jar-with-dependencies.jar TrafficMonitoring.TrafficMonitoring beijing 1 1 1 1 $RATE > tests/output_60s/main_1-1-1-1_$RATE.log
 
         elif [ $nmatch -le $NMATCH_MAX ];
         then
@@ -43,7 +43,7 @@ do
 
             if [ $nmatch -le 4 ];
             then
-                timeout 30m storm jar target/TrafficMonitoring-1.0-SNAPSHOT-jar-with-dependencies.jar TrafficMonitoring.TrafficMonitoring beijing 1 $nmatch 1 1 $RATE > tests/output_60s/main_1-$nmatch-1-1_$RATE.log
+                timeout 20m storm jar target/TrafficMonitoring-1.0-SNAPSHOT-jar-with-dependencies.jar TrafficMonitoring.TrafficMonitoring beijing 1 $nmatch 1 1 $RATE > tests/output_60s/main_1-$nmatch-1-1_$RATE.log
             else
                 timeout 10m storm jar target/TrafficMonitoring-1.0-SNAPSHOT-jar-with-dependencies.jar TrafficMonitoring.TrafficMonitoring beijing 1 $nmatch 1 1 $RATE > tests/output_60s/main_1-$nmatch-1-1_$RATE.log
             fi
