@@ -50,13 +50,15 @@ do
         then
             printf "${BLUE}storm_spikedetection --nsource $nsource --naverage $navg --ndetector 1 --nsink 1 --rate -1\n\n${NORMAL}"
 
-            if [ $nsource -le 2 ];
+            if [ $navg -gt "2" ];
             then
-                storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource $navg 1 1 > tests/output_60s/main_$nsource-$navg-1-1_-1.log
-            else
-                timeout 10m storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource $navg 1 1 > tests/output_60s/main_$nsource-$navg-1-1_-1.log
+                if [ $nsource -le 2 ];
+                then
+                    storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource $navg 1 1 > tests/output_60s/main_$nsource-$navg-1-1_-1.log
+                else
+                    timeout 10m storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat $nsource $navg 1 1 > tests/output_60s/main_$nsource-$navg-1-1_-1.log
+                fi
             fi
-
             for ndet in {2..4..2};
             do
                 if [ $navg -le $((NTHREADS-nsource-ndet-1)) ];
