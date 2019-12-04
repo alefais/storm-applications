@@ -11,7 +11,7 @@ SpikeDetection application can be run passing some arguments (if no command line
 ### Execution examples:
 * No argument is passed (all the nodes have parallelism degree equal to 1, the source generation rate is the maximum possible, the execution is local, the input data set is the one inside the `SpikeDetection/data/` directory): <br> `$STORM_HOME/bin/storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection`
 
-* The parallelism degree is explicitly set for all the nodes in the application graph (source: 1, moving average: 2, spike detector: 2, sink: 1) and the data set file to be used as input is explicitly specified (<b>NB:</b> for each unspecified parameter the default value is used, as the generation rate that will be not limited with the following configuration): <br> `$STORM_HOME/bin/storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat 1 2 2 1`
+* The parallelism degree is explicitly set for all the nodes in the application graph (source: 1, moving average: 2, spike detector: 2, sink: 1) and the data set file to be used as input is explicitly passed (<b>NB:</b> for each unspecified parameter the default value is used, as the generation rate that will be not limited with the following configuration): <br> `$STORM_HOME/bin/storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection data/sensors.dat 1 2 2 1`
 
 <b>NB:</b> Running the application as `$STORM_HOME/bin/storm jar target/SpikeDetection-1.0-SNAPSHOT-jar-with-dependencies.jar SpikeDetection.SpikeDetection help` visualizes all the parameter options.
 
