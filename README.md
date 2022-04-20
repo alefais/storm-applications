@@ -1,4 +1,4 @@
-# Benchmarching Applications - Storm version
+# Benchmarking Applications - Storm version
 
 This repository contains a collection of Data Stream Processing applications implemented with [Apache Storm](http://storm.apache.org/). Applications can be run in local mode, further information can be found in each application README and in the [official documentation](https://storm.apache.org/releases/current/Local-mode.html). In order to improve performance, Storm's reliability mechanism has been deactivated by not tracking the tuple tree for spout tuples. Hence, tuples downstream in the topology are emitted as unanchored tuples, meaning that even if they are not acked they won't cause any spout tuples to fail. More details about Storm's guaranteed message processing can be found in the [official documentation](http://storm.apache.org/releases/current/Guaranteeing-message-processing.html).
 
