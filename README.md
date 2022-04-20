@@ -5,3 +5,9 @@ This repository contains a collection of Data Stream Processing applications imp
 This work is based upon [briskstream project](https://github.com/ShuhaoZhangTony/briskstream) and a [collection of real-time applications](https://github.com/mayconbordin/storm-applications).
 
 Two more implementations of these applications have been provided: the first one using [Apache Flink](https://ci.apache.org/projects/flink/flink-docs-release-1.7/), which can be found in the [flink-applications](https://github.com/alefais/flink-applications) repository, and the second one using [WindFlow](https://github.com/ParaGroup/WindFlow) C++17 library, which can be found in the [windflow-applications](https://github.com/alefais/windflow-applications) repository.
+
+## Dependencies 
+In order to run the applications contained in this project, the following dependencies are needed:
+* Apache Storm version 1.1.3 -> see [here](https://storm.apache.org/index.html)
+* Java JDK version 1.8 -> see [here](https://openjdk.java.net/install/)
+* [OSGeo GeoTools library](https://staging.www.osgeo.org/projects/geotools/) version 11.1 -> see [here](https://sourceforge.net/projects/geotools/files/GeoTools%2011%20Releases/)
